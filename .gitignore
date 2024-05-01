@@ -1,0 +1,9 @@
+build/
+__pycache__/
+*.pyc
+formal/*_prove/
+formal/*_bmc/
+formal/*/
+*.vcd
+*.fst
+.env
