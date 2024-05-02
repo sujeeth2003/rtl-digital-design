@@ -20,3 +20,24 @@ module cla4 (
     assign cout = c[4];
 endmodule
 
+// WIDTH-bit adder: 4-bit lookahead blocks with the block carries rippled.
+module cla_adder #(
+    parameter int WIDTH = 16   // must be a multiple of 4
+) (
+    input  logic [WIDTH-1:0] a, b,
+    input  logic             cin,
+    output logic [WIDTH-1:0] sum,
+    output logic             cout
+);
+    localparam int BLOCKS = WIDTH / 4;
+    logic [BLOCKS:0] c;
+    assign c[0] = cin;
+
+    genvar i;
+    generate
+        for (i = 0; i < BLOCKS; i++) begin : g_blk
+            cla4 u (.a(a[4*i +: 4]), .b(b[4*i +: 4]), .cin(c[i]), .sum(sum[4*i +: 4]), .cout(c[i+1]));
+        end
+    endgenerate
+    assign cout = c[BLOCKS];
+endmodule
