@@ -12,3 +12,12 @@ module ripple_adder #(
     logic [WIDTH:0] c;
     assign c[0] = cin;
 
+    genvar i;
+    generate
+        for (i = 0; i < WIDTH; i++) begin : g_bit
+            full_adder fa (.a(a[i]), .b(b[i]), .cin(c[i]), .s(sum[i]), .c(c[i+1]));
+        end
+    endgenerate
+
+    assign cout = c[WIDTH];
+endmodule
