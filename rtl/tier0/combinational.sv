@@ -19,3 +19,19 @@ module priority_encoder #(
     end
 endmodule
 
+// Barrel shifter: log2(WIDTH) mux stages, so any shift amount takes the same
+// (short) path. mode: 00 logical left, 01 logical right, 10 arithmetic right.
+module barrel_shifter #(
+    parameter int WIDTH = 16,
+    localparam int SH   = $clog2(WIDTH)
+) (
+    input  logic [WIDTH-1:0] din,
+    input  logic [SH-1:0]    amt,
+    input  logic [1:0]       mode,
+    output logic [WIDTH-1:0] dout
+);
+    logic [WIDTH-1:0] stage [SH+1];
+    logic             fill;
+    assign fill = (mode == 2'b10) ? din[WIDTH-1] : 1'b0;
+    assign stage[0] = din;
+
