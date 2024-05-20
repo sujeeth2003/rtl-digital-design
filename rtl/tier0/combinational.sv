@@ -35,3 +35,16 @@ module barrel_shifter #(
     assign fill = (mode == 2'b10) ? din[WIDTH-1] : 1'b0;
     assign stage[0] = din;
 
+    genvar i;
+    generate
+        for (i = 0; i < SH; i++) begin : g_stage
+            localparam int K = 1 << i;
+            always_comb begin
+                if (!amt[i])              stage[i+1] = stage[i];
+                else if (mode == 2'b00)   stage[i+1] = {stage[i][WIDTH-K-1:0], {K{1'b0}}};
+                else                      stage[i+1] = {{K{fill}}, stage[i][WIDTH-1:K]};
+            end
+        end
+    endgenerate
+    assign dout = stage[SH];
+endmodule
