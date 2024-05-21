@@ -20,3 +20,16 @@ module dff_sync #(parameter int WIDTH = 1) (
 endmodule
 
 // Up/down counter with synchronous load.
+module counter #(parameter int WIDTH = 8) (
+    input  logic             clk, rst_n, en, load, up,
+    input  logic [WIDTH-1:0] load_val,
+    output logic [WIDTH-1:0] count
+);
+    always_ff @(posedge clk)
+        if (!rst_n)    count <= '0;
+        else if (load) count <= load_val;
+        else if (en)   count <= up ? count + 1'b1 : count - 1'b1;
+endmodule
+
+// Universal shift register. mode: 00 hold, 01 shift right (serial in at MSB),
+// 10 shift left (serial in at LSB), 11 parallel load.
