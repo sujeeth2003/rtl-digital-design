@@ -50,3 +50,27 @@ module shift_reg #(parameter int WIDTH = 8) (
         endcase
 endmodule
 
+// Moore FSM: overlapping "1011" sequence detector. Output depends on state only.
+module seq_detect_1011 (
+    input  logic clk, rst_n, in,
+    output logic detected
+);
+    typedef enum logic [2:0] {S_IDLE, S_1, S_10, S_101, S_1011} state_t;
+    state_t state, next;
+
+    always_ff @(posedge clk)
+        if (!rst_n) state <= S_IDLE;
+        else        state <= next;
+
+    always_comb begin
+        case (state)
+            S_IDLE:  next = in ? S_1    : S_IDLE;
+            S_1:     next = in ? S_1    : S_10;
+            S_10:    next = in ? S_101  : S_IDLE;
+            S_101:   next = in ? S_1011 : S_10;
+            S_1011:  next = in ? S_1    : S_10;   // overlap: last '1' starts a new match
+            default: next = S_IDLE;
+        endcase
+    end
+    assign detected = (state == S_1011);
+endmodule
