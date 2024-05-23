@@ -27,3 +27,9 @@ module tier0_top (
     priority_encoder #(8) u_enc (.req(req), .idx(enc_idx), .valid(enc_valid));
     barrel_shifter #(16) u_shf (.din(a), .amt(sh_amt), .mode(sh_mode), .dout(shf));
 
+    dff_async #(1) u_dffa (.clk(clk), .rst_n(rst_n), .en(en), .d(d_in), .q(dff_a_q));
+    dff_sync  #(1) u_dffs (.clk(clk), .rst_n(rst_n), .en(en), .d(d_in), .q(dff_s_q));
+    counter   #(8) u_cnt  (.clk(clk), .rst_n(rst_n), .en(en), .load(load), .up(up), .load_val(load_val), .count(cnt));
+    shift_reg #(8) u_sr   (.clk(clk), .rst_n(rst_n), .mode(sr_mode), .ser_in(ser_in), .par_in(par_in), .q(sr_q));
+    seq_detect_1011 u_det (.clk(clk), .rst_n(rst_n), .in(bit_in), .detected(detected));
+endmodule
