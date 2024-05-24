@@ -16,3 +16,18 @@ import subprocess
 import sys
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent.parent
+BUILD = ROOT / "build"
+
+# block -> (top module, [rtl sources], C++ testbench)
+SIM = {
+    "tier0":      ("tier0_top",   ["rtl/tier0/*.sv"],                                     "tb/tier0_tb.cpp"),
+    "alu":        ("alu",         ["rtl/alu/*.sv"],                                       "tb/alu_tb.cpp"),
+    "fifo":       ("sync_fifo",   ["rtl/fifo/*.sv"],                                      "tb/fifo_tb.cpp"),
+    "async_fifo": ("async_fifo",  ["rtl/cdc/*.sv"],                                       "tb/async_fifo_tb.cpp"),
+    "axil":       ("axil_regs",   ["rtl/axi_lite/axil_regs.sv"],                          "tb/axil_tb.cpp"),
+    "riscv":      ("riscv_top",   ["rtl/alu/*.sv", "rtl/riscv/*.sv"],                     "tb/riscv_tb.cpp"),
+}
+# formal jobs are .sby files in formal/
+FORMAL = ["alu", "tier0", "fifo", "gray", "axil"]
+
