@@ -87,3 +87,10 @@ def sim(name):
     else:
         subprocess.run([str(exe)], cwd=ROOT, check=True)
 
+
+def formal(name):
+    sby = tool("SBY", "sby", "yowasp-sby")
+    print(f"[formal:{name}]")
+    subprocess.run(sby + ["-f", f"{name}.sby"], cwd=ROOT / "formal", check=True)
+
+
