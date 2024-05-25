@@ -64,3 +64,26 @@ def cxxrtl_include(yosys):
             return cand
     sys.exit("cannot find cxxrtl runtime headers")
 
+
+def sim(name):
+    top, srcs, tb = SIM[name]
+    BUILD.mkdir(exist_ok=True)
+    yosys = tool("YOSYS", "yosys", "yowasp-yosys")
+    cxx = tool("CXX", "g++", "clang++")
+    files = expand(srcs)
+    gen = f"build/{name}_dut.cc"
+    script = f"read_verilog -sv {' '.join(files)}; hierarchy -top {top}; proc; write_cxxrtl -header {gen}"
+    print(f"[{name}] yosys: {len(files)} files, top={top}")
+    subprocess.run(yosys + ["-q", "-p", script], cwd=ROOT, check=True)
+    exe = BUILD / (f"{name}_sim" + (".exe" if os.name == "nt" else ""))
+    inc = cxxrtl_include(yosys)
+    cmd = cxx + ["-std=c++17", "-O2", "-w", f"-I{inc}", f"-I{BUILD}", f"-DDUT_HEADER=\"{name}_dut.h\"",
+                 str(ROOT / tb), str(ROOT / gen), "-o", str(exe)]
+    print(f"[{name}] compile testbench")
+    subprocess.run(cmd, cwd=ROOT, check=True)
+    print(f"[{name}] run")
+    if name == "riscv":   # program-driven: assemble, run on RTL and on the ISS, compare
+        subprocess.run([sys.executable, "tools/riscv_cosim.py", "--random", "200"], cwd=ROOT, check=True)
+    else:
+        subprocess.run([str(exe)], cwd=ROOT, check=True)
+
