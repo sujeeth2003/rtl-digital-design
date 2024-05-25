@@ -1,0 +1,14 @@
+[tasks]
+prove
+
+[options]
+mode prove
+depth 2
+
+[engines]
+smtbmc z3
+
+[script]
+read_verilog -sv -formal full_adder.sv ripple_adder.sv cla_adder.sv array_multiplier.sv combinational.sv tier0_formal.sv
+prep -top tier0_formal
+
