@@ -12,3 +12,10 @@ smtbmc z3
 read_verilog -sv -formal full_adder.sv ripple_adder.sv cla_adder.sv array_multiplier.sv combinational.sv tier0_formal.sv
 prep -top tier0_formal
 
+[files]
+../rtl/tier0/full_adder.sv
+../rtl/tier0/ripple_adder.sv
+../rtl/tier0/cla_adder.sv
+../rtl/tier0/array_multiplier.sv
+../rtl/tier0/combinational.sv
+tier0_formal.sv
