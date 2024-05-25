@@ -94,3 +94,25 @@ def formal(name):
     subprocess.run(sby + ["-f", f"{name}.sby"], cwd=ROOT / "formal", check=True)
 
 
+def main():
+    a = sys.argv[1:]
+    if not a or a[0] == "list":
+        print("sim   :", ", ".join(SIM))
+        print("formal:", ", ".join(FORMAL))
+    elif a[0] == "sim":
+        for n in (a[1:] or SIM):
+            sim(n)
+    elif a[0] == "formal":
+        for n in (a[1:] or FORMAL):
+            formal(n)
+    elif a[0] == "all":
+        for n in SIM:
+            sim(n)
+        for n in FORMAL:
+            formal(n)
+    else:
+        sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    main()
