@@ -42,3 +42,10 @@ def tool(env, *names):
     sys.exit(f"missing tool: set ${env} or install one of {names}")
 
 
+def expand(patterns):
+    files = []
+    for pat in patterns:
+        files += sorted(str(p.relative_to(ROOT)).replace("\\", "/") for p in ROOT.glob(pat))
+    return files
+
+
