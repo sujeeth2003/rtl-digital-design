@@ -48,3 +48,35 @@ int main() {
   for (int n = 0; n < 2000; ++n) {
     uint16_t d = (n < 4) ? (n == 0 ? 0 : n == 1 ? 0xFFFF : n == 2 ? 0x8000 : 1) : rnd() & 0xFFFF;
     for (int mode = 0; mode < 3; ++mode)
+      for (int amt = 0; amt < 16; ++amt) {
+        set(t.p_a, d); set(t.p_sh__mode, mode); set(t.p_sh__amt, amt); settle();
+        uint16_t ref = mode == 0 ? (uint16_t)(d << amt) : mode == 1 ? (uint16_t)(d >> amt) : (uint16_t)((int16_t)d >> amt);
+        CHECK(get(t.p_shf) == ref, "shift mode=%d amt=%d d=%04x got %04llx want %04x", mode, amt, d, (unsigned long long)get(t.p_shf), ref);
+      }
+  }
+
+  // ---- sequential: model of dffs, counter, shift register, 1011 detector --
+  set(t.p_rst__n, 0); set(t.p_en, 0);
+  for (int i = 0; i < 3; ++i) tick();
+  CHECK(get(t.p_cnt) == 0 && get(t.p_sr__q) == 0 && get(t.p_dff__a__q) == 0, "reset state");
+  set(t.p_rst__n, 1);
+
+  uint8_t m_cnt = 0, m_sr = 0; bool m_da = false, m_ds = false;
+  int m_state = 0;   // 0 idle,1 "1",2 "10",3 "101",4 "1011"
+  for (int c = 0; c < 200000; ++c) {
+    bool en = rnd() & 1, load = (rnd() % 8) == 0, up = rnd() & 1, d = rnd() & 1, ser = rnd() & 1, bit = rnd() & 1;
+    uint8_t lv = rnd() & 0xFF, pi = rnd() & 0xFF; int mode = rnd() & 3;
+    bool rst_n = (rnd() % 500) != 0;
+    set(t.p_en, en); set(t.p_load, load); set(t.p_up, up); set(t.p_d__in, d); set(t.p_ser__in, ser);
+    set(t.p_bit__in, bit); set(t.p_load__val, lv); set(t.p_par__in, pi); set(t.p_sr__mode, mode);
+    set(t.p_rst__n, rst_n);
+    t.p_clk.set<bool>(false); settle();
+    // async reset flop reacts immediately when rst_n falls
+    if (!rst_n) m_da = false;
+    settle();
+    CHECK(get(t.p_dff__a__q) == m_da, "dff_async after async reset, cycle %d", c);
+    t.p_clk.set<bool>(true); settle();
+    // reference model, sampled on the rising edge
+    if (!rst_n) { m_cnt = 0; m_sr = 0; m_ds = false; m_da = false; m_state = 0; }
+    else {
+      if (en) { m_da = d; m_ds = d; }
