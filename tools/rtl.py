@@ -49,3 +49,18 @@ def expand(patterns):
     return files
 
 
+def cxxrtl_include(yosys):
+    """Locate the CXXRTL runtime headers shipped with (yowasp-)yosys."""
+    try:
+        import yowasp_yosys  # type: ignore
+        p = Path(yowasp_yosys.__file__).parent / "share" / "include" / "backends" / "cxxrtl" / "runtime"
+        if p.exists():
+            return p
+    except ImportError:
+        pass
+    out = subprocess.run(yosys + ["-p", "help"], capture_output=True, text=True)
+    for cand in (Path(shutil.which("yosys") or "/usr").parent.parent / "share/yosys/include/backends/cxxrtl/runtime",):
+        if cand.exists():
+            return cand
+    sys.exit("cannot find cxxrtl runtime headers")
+
