@@ -31,3 +31,14 @@ SIM = {
 # formal jobs are .sby files in formal/
 FORMAL = ["alu", "tier0", "fifo", "gray", "axil"]
 
+
+def tool(env, *names):
+    if os.environ.get(env):
+        return os.environ[env].split()
+    for n in names:
+        p = shutil.which(n)
+        if p:
+            return [p]
+    sys.exit(f"missing tool: set ${env} or install one of {names}")
+
+
