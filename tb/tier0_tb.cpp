@@ -80,3 +80,19 @@ int main() {
     if (!rst_n) { m_cnt = 0; m_sr = 0; m_ds = false; m_da = false; m_state = 0; }
     else {
       if (en) { m_da = d; m_ds = d; }
+      if (load) m_cnt = lv; else if (en) m_cnt = up ? m_cnt + 1 : m_cnt - 1;
+      if (mode == 1) m_sr = (ser << 7) | (m_sr >> 1); else if (mode == 2) m_sr = (m_sr << 1) | ser; else if (mode == 3) m_sr = pi;
+      static const int nxt[5][2] = {{0, 1}, {2, 1}, {0, 3}, {2, 4}, {2, 1}};
+      m_state = nxt[m_state][bit];
+    }
+    CHECK(get(t.p_dff__a__q) == m_da, "dff_async cycle %d", c);
+    CHECK(get(t.p_dff__s__q) == m_ds, "dff_sync cycle %d", c);
+    CHECK(get(t.p_cnt) == m_cnt, "counter cycle %d got %llu want %u", c, (unsigned long long)get(t.p_cnt), m_cnt);
+    CHECK(get(t.p_sr__q) == m_sr, "shift_reg cycle %d", c);
+    CHECK(get(t.p_detected) == (m_state == 4), "detector cycle %d", c);
+  }
+
+  if (errors) { std::printf("tier0: %d FAILURES\n", errors); return 1; }
+  std::printf("tier0: all checks passed (adders 200k random, mult 65536 exhaustive, encoder 256 exhaustive, shifter 96k, 200k sequential cycles)\n");
+  return 0;
+}
