@@ -15,3 +15,15 @@ package alu_pkg;
         ALU_PASSB = 4'd11   // result = b (used for LUI)
     } alu_op_t;
 
+    // carry: carry-out of a+b (ADD) or of a+~b+1 (SUB, i.e. NOT borrow).
+    // overflow: signed overflow of ADD/SUB. Both are 0 for every other opcode.
+    typedef struct packed {
+        logic zero;
+        logic negative;
+        logic carry;
+        logic overflow;
+    } alu_flags_t;
+endpackage
+
+import alu_pkg::*;   // compilation-unit scope: keeps the ports readable and Yosys-compatible
+
