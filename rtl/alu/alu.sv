@@ -69,3 +69,11 @@ module alu #(
         endcase
     end
 
+    wire arith = (op == ALU_ADD) || (op == ALU_SUB);
+    alu_pkg::alu_flags_t fl;
+    assign fl.zero     = (result == '0);
+    assign fl.negative = result[WIDTH-1];
+    assign fl.carry    = arith & carry;
+    assign fl.overflow = arith & overflow;
+    assign flags       = fl;
+endmodule
