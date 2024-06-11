@@ -30,3 +30,12 @@ module tier0_formal (
     logic [2:0] ref_idx;
     always_comb begin ref_idx = 3'd0; for (int i = 0; i < 8; i++) if (d[i]) ref_idx = 3'(i); end
 
+    always_comb begin
+        assert({rc, rs} == ref_sum);
+        assert({cc, cs} == ref_sum);
+        assert(mp == a[5:0] * b[5:0]);
+        if (mode != 2'b11) assert(sh == ref_sh);
+        assert(pv == (d != 8'd0));
+        if (d != 8'd0) assert(pi == ref_idx);
+    end
+endmodule
