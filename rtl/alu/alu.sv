@@ -27,3 +27,17 @@ endpackage
 
 import alu_pkg::*;   // compilation-unit scope: keeps the ports readable and Yosys-compatible
 
+module alu #(
+    parameter int WIDTH = 32
+) (
+    input  logic [WIDTH-1:0]   a, b,
+    input  logic [3:0]         op,        // alu_op_t encoding (see alu_pkg)
+    output logic [WIDTH-1:0]   result,
+    output logic [3:0]         flags     // packed alu_flags_t: {zero, negative, carry, overflow}
+);
+    localparam int SH = $clog2(WIDTH);
+    logic [SH-1:0]    shamt;
+    logic [WIDTH:0]   sum_ext;       // WIDTH+1 bits: keeps the carry-out
+    logic [WIDTH-1:0] b_eff;
+    logic             is_sub, carry, overflow, lt_signed, lt_unsigned;
+
