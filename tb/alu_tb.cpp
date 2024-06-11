@@ -34,3 +34,14 @@ static Ref model(int op, uint32_t a, uint32_t b) {
   return m;
 }
 
+static void check(int op, uint32_t a, uint32_t b) {
+  t.p_a.set<uint32_t>(a); t.p_b.set<uint32_t>(b); t.p_op.set<uint32_t>(op); t.step();
+  Ref m = model(op, a, b);
+  uint32_t r = t.p_result.get<uint32_t>(), f = t.p_flags.get<uint32_t>();   // {zero,negative,carry,overflow}
+  bool z = f >> 3 & 1, n = f >> 2 & 1, c = f >> 1 & 1, v = f & 1;
+  ++checks;
+  if (r != m.r || z != m.z || n != m.n || c != m.c || v != m.v) {
+    if (errors++ < 15) std::printf("FAIL op=%d a=%08x b=%08x  rtl r=%08x zncv=%d%d%d%d  ref r=%08x zncv=%d%d%d%d\n", op, a, b, r, z, n, c, v, m.r, m.z, m.n, m.c, m.v);
+  }
+}
+
