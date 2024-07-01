@@ -45,3 +45,12 @@ static void check(int op, uint32_t a, uint32_t b) {
   }
 }
 
+int main() {
+  const uint32_t corners[] = {0, 1, 2, 31, 32, 0x7FFFFFFF, 0x80000000, 0x80000001, 0xFFFFFFFF, 0xFFFFFFFE, 0x55555555, 0xAAAAAAAA};
+  for (int op = 0; op <= 12; ++op) {                       // op 12 is an undefined opcode: must give 0
+    for (uint32_t a : corners) for (uint32_t b : corners) check(op, a, b);
+    for (int i = 0; i < 100000; ++i) check(op, rnd(), rnd());
+  }
+  if (errors) { std::printf("alu: %d FAILURES / %d checks\n", errors, checks); return 1; }
+  std::printf("alu: all %d checks passed (12 opcodes + undefined, corners + 100k random each; result and all 4 flags)\n", checks);
+}
