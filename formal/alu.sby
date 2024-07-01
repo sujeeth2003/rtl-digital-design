@@ -1,0 +1,17 @@
+[tasks]
+prove
+
+[options]
+mode prove
+depth 2
+
+[engines]
+smtbmc z3
+
+[script]
+read_verilog -sv -formal alu.sv alu_formal.sv
+prep -top alu_formal
+
+[files]
+../rtl/alu/alu.sv
+alu_formal.sv
