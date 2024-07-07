@@ -21,3 +21,26 @@ module sync_fifo #(
     logic [AW:0]      wptr, rptr;
     logic [WIDTH-1:0] mem [0:DEPTH-1];
 
+    assign empty        = (wptr == rptr);
+    assign full         = (wptr[AW] != rptr[AW]) && (wptr[AW-1:0] == rptr[AW-1:0]);
+    assign count        = wptr - rptr;
+    assign almost_full  = (count >= (AW+1)'(DEPTH - AF_MARGIN));
+    assign almost_empty = (count <= (AW+1)'(AE_MARGIN));
+    assign rd_data      = mem[rptr[AW-1:0]];
+
+    wire do_wr = wr_en && !full;
+    wire do_rd = rd_en && !empty;
+
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin
+            wptr <= '0;
+            rptr <= '0;
+        end else begin
+            if (do_wr) begin
+                mem[wptr[AW-1:0]] <= wr_data;
+                wptr <= wptr + 1'b1;
+            end
+            if (do_rd) rptr <= rptr + 1'b1;
+        end
+    end
+
