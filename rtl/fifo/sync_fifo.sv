@@ -44,3 +44,19 @@ module sync_fifo #(
         end
     end
 
+`ifdef FORMAL
+    // ---- formal properties (SymbiYosys, see formal/fifo.sby) -----------------
+    reg f_past_valid = 1'b0;
+    always @(posedge clk) f_past_valid <= 1'b1;
+    always @(*) if (!f_past_valid) assume(!rst_n);       // start in reset
+
+    // structural invariants
+    always @(*) if (rst_n) begin
+        assert(!(full && empty));
+        assert(count <= DEPTH);
+        assert(full  == (count == DEPTH));
+        assert(empty == (count == 0));
+        assert(almost_full  == (count >= DEPTH - AF_MARGIN));
+        assert(almost_empty == (count <= AE_MARGIN));
+    end
+
