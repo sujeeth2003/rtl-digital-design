@@ -1,0 +1,17 @@
+[tasks]
+prove
+
+[options]
+mode prove
+depth 40
+
+[engines]
+smtbmc z3
+
+[script]
+read_verilog -sv -formal -DFORMAL fifo_formal_top.sv sync_fifo.sv
+prep -top fifo_formal_top
+
+[files]
+fifo_formal_top.sv
+../rtl/fifo/sync_fifo.sv
