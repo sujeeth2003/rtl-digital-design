@@ -22,3 +22,15 @@ module bin2gray #(parameter int WIDTH = 4) (
 endmodule
 
 // Gray -> binary: prefix XOR from the MSB down.
+module gray2bin #(parameter int WIDTH = 4) (
+    input  logic [WIDTH-1:0] gray,
+    output logic [WIDTH-1:0] bin
+);
+    always_comb begin
+        bin[WIDTH-1] = gray[WIDTH-1];
+        for (int i = WIDTH-2; i >= 0; i--) bin[i] = bin[i+1] ^ gray[i];
+    end
+endmodule
+
+// Free-running Gray pointer: keeps a binary counter for addressing and a
+// registered Gray copy for crossing clock domains (registered => glitch-free).
