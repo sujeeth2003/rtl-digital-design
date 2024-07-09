@@ -31,3 +31,24 @@ int main() {
     t.p_wr__en.set<bool>(wr); t.p_wr__data.set<uint8_t>(wd); t.p_rd__en.set<bool>(rd); t.p_rst__n.set<bool>(!rst);
     t.p_clk.set<bool>(false); t.step();
 
+    // combinational outputs before the edge must match the model
+    size_t n = model.size();
+    CHECK(t.p_full.get<bool>() == (n == DEPTH), "full n=%zu", n);
+    CHECK(t.p_empty.get<bool>() == (n == 0), "empty n=%zu", n);
+    CHECK(t.p_count.get<uint32_t>() == n, "count %u vs %zu", t.p_count.get<uint32_t>(), n);
+    CHECK(t.p_almost__full.get<bool>() == (n >= (size_t)(DEPTH - AF)), "almost_full n=%zu", n);
+    CHECK(t.p_almost__empty.get<bool>() == (n <= (size_t)AE), "almost_empty n=%zu", n);
+    if (n) CHECK(t.p_rd__data.get<uint8_t>() == model.front(), "head data got %02x want %02x", t.p_rd__data.get<uint8_t>(), model.front());
+    full_cycles += n == DEPTH; empty_cycles += n == 0;
+
+    t.p_clk.set<bool>(true); t.step();
+    if (rst) { model.clear(); continue; }
+    bool do_wr = wr && n < DEPTH, do_rd = rd && n > 0;    // simultaneous read+write on a full FIFO: write is dropped (full is sampled pre-edge)
+    if (do_rd) { model.pop_front(); ++reads; }
+    if (do_wr) { model.push_back(wd); ++writes; }
+    if (do_wr && do_rd && n == DEPTH) {}                   // unreachable: do_wr false when full
+  }
+  (void)wraps;
+  if (errors) { std::printf("fifo: %d FAILURES\n", errors); return 1; }
+  std::printf("fifo: all checks passed over 1M cycles (%ld writes, %ld reads, %ld cycles full, %ld cycles empty, mid-run resets)\n", writes, reads, full_cycles, empty_cycles);
+}
