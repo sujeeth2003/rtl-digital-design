@@ -13,3 +13,12 @@ module sync2ff #(parameter int WIDTH = 1) (
         else        begin meta <= d;  q <= meta; end
 endmodule
 
+// Binary -> Gray: consecutive integers differ in exactly one bit.
+module bin2gray #(parameter int WIDTH = 4) (
+    input  logic [WIDTH-1:0] bin,
+    output logic [WIDTH-1:0] gray
+);
+    assign gray = bin ^ (bin >> 1);
+endmodule
+
+// Gray -> binary: prefix XOR from the MSB down.
