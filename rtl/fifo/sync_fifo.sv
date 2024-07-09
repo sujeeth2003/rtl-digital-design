@@ -60,3 +60,22 @@ module sync_fifo #(
         assert(almost_empty == (count <= AE_MARGIN));
     end
 
+    // count moves by exactly do_wr - do_rd each cycle
+    reg [AW:0] f_prev_count;
+    reg        f_prev_wr, f_prev_rd, f_prev_rst_n;
+    always @(posedge clk) begin
+        f_prev_count <= count; f_prev_wr <= do_wr; f_prev_rd <= do_rd; f_prev_rst_n <= rst_n;
+    end
+    always @(*) if (f_past_valid && f_prev_rst_n && rst_n)
+        assert(count == f_prev_count + f_prev_wr - f_prev_rd);
+    always @(posedge clk) if (f_past_valid && !f_prev_rst_n) assert(count == 0);
+
+    // data integrity / ordering: follow one arbitrary slot (pointer value + data value)
+    (* anyconst *) wire [AW:0]      f_tag;
+    (* anyconst *) wire [WIDTH-1:0] f_data;
+    always @(*) if (do_wr && wptr == f_tag) assume(wr_data == f_data);   // constrain only what is written there
+    wire f_occupied = ((f_tag - rptr) & ((1 << (AW+1)) - 1)) < count;    // tag lies in [rptr, wptr)
+    always @(*) if (rst_n && f_occupied) assert(mem[f_tag[AW-1:0]] == f_data);
+    always @(*) if (rst_n && do_rd && rptr == f_tag) assert(rd_data == f_data);
+`endif
+endmodule
