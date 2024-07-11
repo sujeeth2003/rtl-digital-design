@@ -34,3 +34,14 @@ endmodule
 
 // Free-running Gray pointer: keeps a binary counter for addressing and a
 // registered Gray copy for crossing clock domains (registered => glitch-free).
+module gray_counter #(parameter int WIDTH = 5) (
+    input  logic             clk, rst_n, inc,
+    output logic [WIDTH-1:0] bin, gray,
+    output logic [WIDTH-1:0] bin_next, gray_next
+);
+    assign bin_next = bin + WIDTH'(inc);
+    bin2gray #(WIDTH) u_b2g (.bin(bin_next), .gray(gray_next));
+    always_ff @(posedge clk or negedge rst_n)
+        if (!rst_n) begin bin <= '0; gray <= '0; end
+        else        begin bin <= bin_next; gray <= gray_next; end
+endmodule
