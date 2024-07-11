@@ -22,3 +22,18 @@ module async_fifo #(
     logic [AW:0] wbin, wgray, wbin_next, wgray_next, rgray_sync;   // write domain
     logic [AW:0] rbin, rgray, rbin_next, rgray_next, wgray_sync;   // read domain
 
+    // ---- write domain -----------------------------------------------------
+    wire  wfull_next = (wgray_next == {~rgray_sync[AW:AW-1], rgray_sync[AW-2:0]});
+    wire  wen = winc && !wfull;
+
+    gray_counter #(AW+1) u_wptr (.clk(wclk), .rst_n(wrst_n), .inc(wen),
+                                 .bin(wbin), .gray(wgray), .bin_next(wbin_next), .gray_next(wgray_next));
+    sync2ff #(AW+1) u_sync_r2w (.clk(wclk), .rst_n(wrst_n), .d(rgray), .q(rgray_sync));
+
+    always_ff @(posedge wclk or negedge wrst_n)
+        if (!wrst_n) wfull <= 1'b0;
+        else         wfull <= wfull_next;
+
+    always_ff @(posedge wclk)
+        if (wen) mem[wbin[AW-1:0]] <= wdata;
+
