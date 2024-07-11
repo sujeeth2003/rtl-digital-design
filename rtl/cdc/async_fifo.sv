@@ -37,3 +37,17 @@ module async_fifo #(
     always_ff @(posedge wclk)
         if (wen) mem[wbin[AW-1:0]] <= wdata;
 
+    // ---- read domain ------------------------------------------------------
+    wire  rempty_next = (rgray_next == wgray_sync);
+    wire  ren = rinc && !rempty;
+
+    gray_counter #(AW+1) u_rptr (.clk(rclk), .rst_n(rrst_n), .inc(ren),
+                                 .bin(rbin), .gray(rgray), .bin_next(rbin_next), .gray_next(rgray_next));
+    sync2ff #(AW+1) u_sync_w2r (.clk(rclk), .rst_n(rrst_n), .d(wgray), .q(wgray_sync));
+
+    always_ff @(posedge rclk or negedge rrst_n)
+        if (!rrst_n) rempty <= 1'b1;
+        else         rempty <= rempty_next;
+
+    assign rdata = mem[rbin[AW-1:0]];   // first-word fall-through
+endmodule
