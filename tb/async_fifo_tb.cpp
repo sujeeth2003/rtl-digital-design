@@ -35,3 +35,25 @@ int main() {
   long edges = 0;
   bool stop_writes = false;
 
+  while (edges < TOTAL_EDGES || !(model.empty() && t.p_rempty.get<bool>())) {
+    if (edges > TOTAL_EDGES + 200000) { std::printf("FAIL: did not drain\n"); ++errors; break; }
+    if (edges == TOTAL_EDGES) stop_writes = true;
+    now = next_w < next_r ? next_w : next_r;
+    bool do_w = next_w <= next_r, do_r = next_r <= next_w;   // may coincide: both edges at once
+    // occasionally change frequency ratio and traffic shape
+    if (edges % 20000 == 0) {
+      wper = 300 + rnd() % 1500; rper = 300 + rnd() % 1500;
+      pw = (rnd() % 100) / 100.0; pr = (rnd() % 100) / 100.0;
+    }
+    // sample DUT inputs/outputs on the domain's rising edge BEFORE applying the edge
+    bool w_rise = do_w && !wc, r_rise = do_r && !rc;
+    bool winc = false, rinc = false; uint8_t wd = 0;
+    bool wfull_pre = t.p_wfull.get<bool>(), rempty_pre = t.p_rempty.get<bool>();
+    uint8_t rdata_pre = t.p_rdata.get<uint8_t>();
+    if (w_rise) { winc = !stop_writes && (rnd() % 1000) < pw * 1000; wd = rnd() & 0xFF; t.p_winc.set<bool>(winc); t.p_wdata.set<uint8_t>(wd); }
+    if (r_rise) { rinc = (rnd() % 1000) < pr * 1000; t.p_rinc.set<bool>(rinc); }
+    if (do_w) { wc = !wc; t.p_wclk.set<bool>(wc); next_w = now + wper + rnd() % 60; }
+    if (do_r) { rc = !rc; t.p_rclk.set<bool>(rc); next_r = now + rper + rnd() % 60; }
+    t.step();
+    edges += 1;
+
