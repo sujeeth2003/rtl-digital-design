@@ -57,3 +57,18 @@ int main() {
     t.step();
     edges += 1;
 
+    if (w_rise && winc && !wfull_pre) {
+      CHECK(model.size() < DEPTH, "OVERFLOW: write accepted with %zu items in flight", model.size());
+      model.push_back(wd); ++writes;
+    }
+    if (w_rise) full_seen += wfull_pre;
+    if (r_rise && rinc && !rempty_pre) {
+      CHECK(!model.empty(), "UNDERFLOW: read accepted from empty model");
+      if (!model.empty()) { CHECK(rdata_pre == model.front(), "data got %02x want %02x", rdata_pre, model.front()); model.pop_front(); ++reads; }
+    }
+    if (r_rise) empty_seen += rempty_pre;
+  }
+
+  if (errors) { std::printf("async_fifo: %d FAILURES\n", errors); return 1; }
+  std::printf("async_fifo: all checks passed (%ld writes, %ld reads, no overflow/underflow, data in order, drained; wfull seen %ld, rempty seen %ld sampled cycles; clock ratios re-randomized every 20k edges)\n", writes, reads, full_seen, empty_seen);
+}
