@@ -1,0 +1,17 @@
+[tasks]
+prove
+
+[options]
+mode prove
+depth 2
+
+[engines]
+smtbmc z3
+
+[script]
+read_verilog -sv -formal cdc_primitives.sv gray_formal.sv
+prep -top gray_formal
+
+[files]
+../rtl/cdc/cdc_primitives.sv
+gray_formal.sv
