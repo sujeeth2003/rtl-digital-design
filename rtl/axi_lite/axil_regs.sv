@@ -110,3 +110,25 @@ module axil_regs #(
         if (f_arvalid && !f_arready) begin assume(arvalid); assume(araddr == f_araddr); end
     end
 
+    // slave obligations (proven)
+    always @(*) if (!rst_n && f_past_valid) begin /* outputs registered: checked after the reset edge */ end
+    always @(posedge clk) if (f_past_valid && !f_rst_n) begin assert(!bvalid); assert(!rvalid); end
+    always @(*) if (f_past_valid && f_rst_n && rst_n) begin
+        if (f_bvalid && !f_bready) begin assert(bvalid); assert(bresp == f_bresp); end   // B holds and is stable
+        if (f_rvalid && !f_rready) begin assert(rvalid); assert(rresp == f_rresp); assert(rdata == f_rdata); end
+        assert(!(bvalid && awready));           // no new write accepted while a response is pending
+        assert(!(rvalid && arready));
+        assert(awready == wready);              // AW and W are always handshaken together
+    end
+    // a response never appears without a write / read having been accepted
+    always @(*) if (f_past_valid && f_rst_n && rst_n) begin
+        if (bvalid && !f_bvalid) assert(f_awvalid && f_awready && f_wvalid && f_wready);
+        if (rvalid && !f_rvalid) assert(f_arvalid && f_arready);
+    end
+    always @(*) if (rst_n) begin
+        // read-only counter register cannot change except through the counting path
+        assert(bresp == OKAY || bresp == SLVERR);
+        assert(rresp == OKAY || rresp == SLVERR);
+    end
+`endif
+endmodule
