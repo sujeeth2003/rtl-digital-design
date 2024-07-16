@@ -22,3 +22,14 @@ module axil_sva #(parameter int ADDR_W = 6) (
     a_b_hold  : assert property (bvalid  && !bready  |=> bvalid  && $stable(bresp));
     a_r_hold  : assert property (rvalid  && !rready  |=> rvalid  && $stable(rdata) && $stable(rresp));
 
+    // one outstanding response per channel; nothing accepted while response pending
+    a_no_aw_while_b : assert property (bvalid |-> !awready);
+    a_no_ar_while_r : assert property (rvalid |-> !arready);
+
+    // a response follows every accepted request within one cycle
+    a_b_after_w : assert property (awvalid && awready && wvalid && wready |=> bvalid);
+    a_r_after_ar: assert property (arvalid && arready |=> rvalid);
+
+    // no spurious responses after reset
+    a_reset : assert property (@(posedge clk) !rst_n |=> !bvalid && !rvalid);
+endmodule
