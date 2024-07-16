@@ -66,3 +66,24 @@ module axil_regs #(
             end
         end
     end
+
+    // ---- read channel -----------------------------------------------------
+    assign arready = arvalid && !rvalid;
+    wire   r_fire  = arvalid && arready;
+
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin
+            rvalid <= 1'b0;
+            rdata  <= '0;
+            rresp  <= OKAY;
+        end else begin
+            if (r_fire) begin
+                rvalid <= 1'b1;
+                rdata  <= r_in_range ? regs[ridx] : 32'hDEAD_BEEF;
+                rresp  <= r_in_range ? OKAY : SLVERR;
+            end else if (rvalid && rready) begin
+                rvalid <= 1'b0;
+            end
+        end
+    end
+
