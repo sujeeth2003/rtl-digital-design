@@ -87,3 +87,26 @@ module axil_regs #(
         end
     end
 
+`ifdef FORMAL
+    // ---- formal: protocol rules (SymbiYosys, formal/axil.sby) ----------------
+    reg f_past_valid = 1'b0;
+    always @(posedge clk) f_past_valid <= 1'b1;
+    always @(*) if (!f_past_valid) assume(!rst_n);
+
+    // master obligations (assumptions): VALID holds with stable payload until READY
+    reg [ADDR_W-1:0] f_awaddr, f_araddr; reg [31:0] f_wdata; reg [3:0] f_wstrb;
+    reg f_awvalid, f_wvalid, f_arvalid, f_awready, f_wready, f_arready, f_bvalid, f_bready, f_rvalid, f_rready, f_rst_n;
+    reg [1:0] f_bresp, f_rresp; reg [31:0] f_rdata;
+    always @(posedge clk) begin
+        f_awaddr <= awaddr; f_araddr <= araddr; f_wdata <= wdata; f_wstrb <= wstrb;
+        f_awvalid <= awvalid; f_wvalid <= wvalid; f_arvalid <= arvalid;
+        f_awready <= awready; f_wready <= wready; f_arready <= arready;
+        f_bvalid <= bvalid; f_bready <= bready; f_rvalid <= rvalid; f_rready <= rready; f_rst_n <= rst_n;
+        f_bresp <= bresp; f_rresp <= rresp; f_rdata <= rdata;
+    end
+    always @(*) if (f_past_valid && f_rst_n && rst_n) begin
+        if (f_awvalid && !f_awready) begin assume(awvalid); assume(awaddr == f_awaddr); end
+        if (f_wvalid  && !f_wready)  begin assume(wvalid);  assume(wdata == f_wdata); assume(wstrb == f_wstrb); end
+        if (f_arvalid && !f_arready) begin assume(arvalid); assume(araddr == f_araddr); end
+    end
+
