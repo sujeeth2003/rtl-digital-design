@@ -45,3 +45,35 @@ int main() {
         bool aw_hs = t.p_awvalid.get<bool>() && t.p_awready.get<bool>(), w_hs = t.p_wvalid.get<bool>() && t.p_wready.get<bool>();
         bool b_hs = t.p_bvalid.get<bool>() && bready;
         uint32_t bresp = t.p_bresp.get<uint32_t>();
+        // protocol monitor for B
+        if (prev_bvalid && !prev_bready) { CHECK(t.p_bvalid.get<bool>(), "BVALID dropped before BREADY"); CHECK(bresp == prev_bresp, "BRESP changed while stalled"); }
+        prev_bvalid = t.p_bvalid.get<bool>(); prev_bready = bready; prev_bresp = bresp;
+        t.p_clk.set<bool>(true); t.step();
+        if (aw_hs) aw_done = true;
+        if (w_hs) w_done = true;
+        if (aw_hs && w_hs) {
+          bool ok = idx < NREGS - 1; exp_bresp = ok ? 0 : 2;
+          if (ok) { for (int b = 0; b < 4; ++b) if (strb >> b & 1) regs[idx] = (regs[idx] & ~(0xFFu << 8 * b)) | (data & (0xFFu << 8 * b)); regs[NREGS - 1]++; }
+          else ++slverr;
+          ++writes;
+        }
+        if (b_hs) { CHECK(bresp == exp_bresp, "BRESP got %u want %u (addr %u)", bresp, exp_bresp, addr); got_b = true; }
+        CHECK(++cycles < 100, "write timeout");
+        if (cycles >= 100) break;
+      }
+      // response code seen at handshake time is validated via the subsequent read-back below
+      t.p_awvalid.set<bool>(false); t.p_wvalid.set<bool>(false); t.p_bready.set<bool>(false);
+    } else {
+      int ar_delay = rnd() % 4, r_delay = rnd() % 4; bool ar_done = false, got_r = false; int cycles = 0;
+      t.p_araddr.set<uint32_t>(addr);
+      t.p_awvalid.set<bool>(false); t.p_wvalid.set<bool>(false); t.p_bready.set<bool>(true);
+      while (!got_r) {
+        bool ar_on = ar_delay-- <= 0 && !ar_done;
+        t.p_arvalid.set<bool>(ar_on);
+        bool rready = r_delay-- <= 0 ? (rnd() % 3 != 0) : false;
+        t.p_rready.set<bool>(rready);
+        t.p_clk.set<bool>(false); t.step();
+        bool ar_hs = t.p_arvalid.get<bool>() && t.p_arready.get<bool>();
+        bool r_hs = t.p_rvalid.get<bool>() && rready;
+        uint32_t rd = t.p_rdata.get<uint32_t>(), rr = t.p_rresp.get<uint32_t>();
+        if (prev_rvalid && !prev_rready) { CHECK(t.p_rvalid.get<bool>(), "RVALID dropped before RREADY"); CHECK(rd == prev_rdata && rr == prev_rresp, "RDATA/RRESP changed while stalled"); }
