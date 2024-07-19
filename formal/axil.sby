@@ -1,0 +1,17 @@
+[tasks]
+prove
+
+[options]
+mode prove
+depth 30
+
+[engines]
+smtbmc z3
+
+[script]
+read_verilog -sv -formal -DFORMAL axil_regs.sv
+prep -top axil_regs
+memory_map
+
+[files]
+../rtl/axi_lite/axil_regs.sv
