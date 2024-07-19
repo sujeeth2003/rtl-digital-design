@@ -77,3 +77,21 @@ int main() {
         bool r_hs = t.p_rvalid.get<bool>() && rready;
         uint32_t rd = t.p_rdata.get<uint32_t>(), rr = t.p_rresp.get<uint32_t>();
         if (prev_rvalid && !prev_rready) { CHECK(t.p_rvalid.get<bool>(), "RVALID dropped before RREADY"); CHECK(rd == prev_rdata && rr == prev_rresp, "RDATA/RRESP changed while stalled"); }
+        prev_rvalid = t.p_rvalid.get<bool>(); prev_rready = rready; prev_rdata = rd; prev_rresp = rr;
+        if (r_hs) {
+          if (idx < NREGS) { CHECK(rd == regs[idx] && rr == 0, "read reg %u got %08x resp %u want %08x", idx, rd, rr, regs[idx]); }
+          else { CHECK(rr == 2, "out-of-range read must return SLVERR, got %u", rr); ++slverr; }
+          ++reads;
+        }
+        t.p_clk.set<bool>(true); t.step();
+        if (ar_hs) ar_done = true;
+        if (r_hs) got_r = true;
+        CHECK(++cycles < 100, "read timeout");
+        if (cycles >= 100) break;
+      }
+      t.p_arvalid.set<bool>(false); t.p_rready.set<bool>(false);
+    }
+  }
+  if (errors) { std::printf("axil: %d FAILURES\n", errors); return 1; }
+  std::printf("axil: all checks passed (%ld writes, %ld reads, %ld SLVERR cases; hold/stability monitors clean)\n", writes, reads, slverr);
+}
