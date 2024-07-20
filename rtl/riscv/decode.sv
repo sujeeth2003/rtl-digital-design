@@ -23,3 +23,19 @@ module imm_gen (
     end
 endmodule
 
+module control (
+    input  logic [31:0] instr,
+    output logic        reg_write, mem_read, mem_write,
+    output logic        alu_src_imm,     // ALU b operand = immediate
+    output logic        alu_a_pc,        // ALU a operand = PC (AUIPC)
+    output logic [3:0]  alu_op,          // alu_pkg::alu_op_t encoding
+    output logic        is_branch, is_jal, is_jalr, is_ebreak,
+    output logic        uses_rs1, uses_rs2
+);
+    wire [6:0] opcode = instr[6:0];
+    wire [2:0] f3     = instr[14:12];
+    wire       f7_5   = instr[30];
+
+    localparam logic [3:0] ADD = 4'd0, SUB = 4'd1, AND_ = 4'd2, OR_ = 4'd3, XOR_ = 4'd4,
+                           SLL = 4'd6, SRL = 4'd7, SRA = 4'd8, SLT = 4'd9, SLTU = 4'd10, PASSB = 4'd11;
+
