@@ -39,3 +39,35 @@ module control (
     localparam logic [3:0] ADD = 4'd0, SUB = 4'd1, AND_ = 4'd2, OR_ = 4'd3, XOR_ = 4'd4,
                            SLL = 4'd6, SRL = 4'd7, SRA = 4'd8, SLT = 4'd9, SLTU = 4'd10, PASSB = 4'd11;
 
+    always_comb begin
+        reg_write = 0; mem_read = 0; mem_write = 0; alu_src_imm = 0; alu_a_pc = 0;
+        alu_op = ADD; is_branch = 0; is_jal = 0; is_jalr = 0; is_ebreak = 0; uses_rs1 = 0; uses_rs2 = 0;
+        case (opcode)
+            7'b0110011: begin                                   // OP (register-register)
+                reg_write = 1; uses_rs1 = 1; uses_rs2 = 1;
+                case (f3)
+                    3'b000: alu_op = f7_5 ? SUB : ADD;
+                    3'b001: alu_op = SLL;
+                    3'b010: alu_op = SLT;
+                    3'b011: alu_op = SLTU;
+                    3'b100: alu_op = XOR_;
+                    3'b101: alu_op = f7_5 ? SRA : SRL;
+                    3'b110: alu_op = OR_;
+                    default: alu_op = AND_;
+                endcase
+            end
+            7'b0010011: begin                                   // OP-IMM
+                reg_write = 1; uses_rs1 = 1; alu_src_imm = 1;
+                case (f3)
+                    3'b000: alu_op = ADD;
+                    3'b001: alu_op = SLL;
+                    3'b010: alu_op = SLT;
+                    3'b011: alu_op = SLTU;
+                    3'b100: alu_op = XOR_;
+                    3'b101: alu_op = f7_5 ? SRA : SRL;
+                    3'b110: alu_op = OR_;
+                    default: alu_op = AND_;
+                endcase
+            end
+            7'b0000011: begin reg_write = 1; mem_read = 1; alu_src_imm = 1; uses_rs1 = 1; end          // LOAD
+            7'b0100011: begin mem_write = 1; alu_src_imm = 1; uses_rs1 = 1; uses_rs2 = 1; end          // STORE
