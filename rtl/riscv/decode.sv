@@ -71,3 +71,13 @@ module control (
             end
             7'b0000011: begin reg_write = 1; mem_read = 1; alu_src_imm = 1; uses_rs1 = 1; end          // LOAD
             7'b0100011: begin mem_write = 1; alu_src_imm = 1; uses_rs1 = 1; uses_rs2 = 1; end          // STORE
+            7'b1100011: begin is_branch = 1; uses_rs1 = 1; uses_rs2 = 1; end                            // BRANCH
+            7'b1101111: begin is_jal = 1; reg_write = 1; end                                            // JAL
+            7'b1100111: begin is_jalr = 1; reg_write = 1; alu_src_imm = 1; uses_rs1 = 1; end            // JALR
+            7'b0110111: begin reg_write = 1; alu_src_imm = 1; alu_op = PASSB; end                       // LUI
+            7'b0010111: begin reg_write = 1; alu_src_imm = 1; alu_a_pc = 1; end                         // AUIPC
+            7'b1110011: is_ebreak = (instr[31:20] == 12'h001) && (f3 == 3'b000);                        // EBREAK
+            default: ;                                                                                  // NOP
+        endcase
+    end
+endmodule
