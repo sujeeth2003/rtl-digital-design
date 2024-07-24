@@ -10,3 +10,25 @@
 //     insert a bubble into EX (then the WB->EX forward supplies the data).
 //  3. Control hazard: branches and jumps resolve in EX, so when one is taken the two
 //     younger instructions in IF/ID and ID/EX are flushed (2-cycle penalty).
+module hazard_unit (
+    // consumer in EX
+    input  logic [4:0] ex_rs1, ex_rs2,
+    // producers
+    input  logic [4:0] mem_rd, wb_rd,
+    input  logic       mem_reg_write, wb_reg_write,
+    output logic [1:0] fwd_a, fwd_b,
+    // load-use detection (ID consumer vs. EX load)
+    input  logic [4:0] id_rs1, id_rs2,
+    input  logic       id_uses_rs1, id_uses_rs2,
+    input  logic       ex_mem_read, ex_valid,
+    input  logic [4:0] ex_rd,
+    output logic       stall,
+    // control hazard
+    input  logic       ex_taken,
+    output logic       flush
+);
+    always_comb begin
+        fwd_a = 2'b00;
+        if (mem_reg_write && mem_rd != 5'd0 && mem_rd == ex_rs1)      fwd_a = 2'b01;
+        else if (wb_reg_write && wb_rd != 5'd0 && wb_rd == ex_rs1)    fwd_a = 2'b10;
+
