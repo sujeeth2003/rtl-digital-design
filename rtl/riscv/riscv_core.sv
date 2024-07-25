@@ -135,3 +135,21 @@ module riscv_core (
     assign ex_target = idex_is_jalr ? (alu_result & 32'hFFFF_FFFE) : (idex_pc + idex_imm);
     wire [31:0] ex_result = (idex_is_jal || idex_is_jalr) ? (idex_pc + 32'd4) : alu_result;
 
+    // EX/MEM
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin
+            exmem_valid <= 1'b0; exmem_reg_write <= 1'b0; exmem_mem_read <= 1'b0; exmem_mem_write <= 1'b0;
+            exmem_is_ebreak <= 1'b0; exmem_rd <= 5'd0; exmem_funct3 <= 3'd0; exmem_result <= 32'd0; exmem_store_data <= 32'd0;
+        end else begin
+            exmem_valid <= idex_valid; exmem_reg_write <= idex_reg_write; exmem_mem_read <= idex_mem_read;
+            exmem_mem_write <= idex_mem_write; exmem_is_ebreak <= idex_is_ebreak; exmem_rd <= idex_rd;
+            exmem_funct3 <= idex_funct3; exmem_result <= ex_result; exmem_store_data <= b_fwd;
+        end
+    end
+
+    // -------------------------------------------------------------- MEM
+    assign dmem_addr   = exmem_result;
+    assign dmem_wdata  = exmem_store_data;
+    assign dmem_we     = exmem_valid && exmem_mem_write && !halted_r;
+    assign dmem_funct3 = exmem_funct3;
+
