@@ -153,3 +153,19 @@ module riscv_core (
     assign dmem_we     = exmem_valid && exmem_mem_write && !halted_r;
     assign dmem_funct3 = exmem_funct3;
 
+    always_ff @(posedge clk) begin
+        if (!rst_n) halted_r <= 1'b0;
+        else if (exmem_valid && exmem_is_ebreak) halted_r <= 1'b1;
+    end
+    assign halted = halted_r;
+
+    // MEM/WB
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin
+            memwb_valid <= 1'b0; memwb_reg_write <= 1'b0; memwb_rd <= 5'd0; memwb_data <= 32'd0;
+        end else begin
+            memwb_valid <= exmem_valid; memwb_reg_write <= exmem_reg_write; memwb_rd <= exmem_rd;
+            memwb_data <= exmem_mem_read ? dmem_rdata : exmem_result;
+        end
+    end
+
