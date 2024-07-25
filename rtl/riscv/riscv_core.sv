@@ -108,3 +108,30 @@ module riscv_core (
                        .ex_mem_read(idex_mem_read), .ex_valid(idex_valid), .ex_rd(idex_rd),
                        .stall(stall), .ex_taken(ex_taken), .flush(flush));
 
+    wire [31:0] a_fwd = (fwd_a == 2'b01) ? exmem_result : (fwd_a == 2'b10) ? memwb_data : idex_rs1_val;
+    wire [31:0] b_fwd = (fwd_b == 2'b01) ? exmem_result : (fwd_b == 2'b10) ? memwb_data : idex_rs2_val;
+    wire [31:0] alu_a = idex_alu_a_pc ? idex_pc : a_fwd;
+    wire [31:0] alu_b = idex_alu_src_imm ? idex_imm : b_fwd;
+    logic [31:0] alu_result;
+    logic [3:0]  alu_flags_unused;
+    alu #(.WIDTH(32)) u_alu (.a(alu_a), .b(alu_b), .op(idex_alu_op), .result(alu_result), .flags(alu_flags_unused));
+
+    wire eq  = (a_fwd == b_fwd);
+    wire lt  = ($signed(a_fwd) < $signed(b_fwd));
+    wire ltu = (a_fwd < b_fwd);
+    logic br_cond;
+    always_comb begin
+        case (idex_funct3)
+            3'b000:  br_cond = eq;
+            3'b001:  br_cond = !eq;
+            3'b100:  br_cond = lt;
+            3'b101:  br_cond = !lt;
+            3'b110:  br_cond = ltu;
+            3'b111:  br_cond = !ltu;
+            default: br_cond = 1'b0;
+        endcase
+    end
+    assign ex_taken  = idex_valid && ((idex_is_branch && br_cond) || idex_is_jal || idex_is_jalr);
+    assign ex_target = idex_is_jalr ? (alu_result & 32'hFFFF_FFFE) : (idex_pc + idex_imm);
+    wire [31:0] ex_result = (idex_is_jal || idex_is_jalr) ? (idex_pc + 32'd4) : alu_result;
+
