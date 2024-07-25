@@ -32,3 +32,12 @@ module hazard_unit (
         if (mem_reg_write && mem_rd != 5'd0 && mem_rd == ex_rs1)      fwd_a = 2'b01;
         else if (wb_reg_write && wb_rd != 5'd0 && wb_rd == ex_rs1)    fwd_a = 2'b10;
 
+        fwd_b = 2'b00;
+        if (mem_reg_write && mem_rd != 5'd0 && mem_rd == ex_rs2)      fwd_b = 2'b01;
+        else if (wb_reg_write && wb_rd != 5'd0 && wb_rd == ex_rs2)    fwd_b = 2'b10;
+    end
+
+    assign stall = ex_valid && ex_mem_read && ex_rd != 5'd0 &&
+                   ((id_uses_rs1 && ex_rd == id_rs1) || (id_uses_rs2 && ex_rd == id_rs2));
+    assign flush = ex_taken;
+endmodule
