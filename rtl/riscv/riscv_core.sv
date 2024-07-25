@@ -22,3 +22,26 @@ module riscv_core (
 );
     localparam logic [31:0] NOP = 32'h0000_0013;   // addi x0, x0, 0
 
+    // -------------------------------------------------------------- IF
+    logic [31:0] pc;
+    logic        stall, flush, halted_r;
+    logic        ex_taken;
+    logic [31:0] ex_target;
+
+    wire [31:0] pc_next = ex_taken ? ex_target : (stall ? pc : pc + 32'd4);
+    always_ff @(posedge clk)
+        if (!rst_n)          pc <= 32'd0;
+        else if (!halted_r)  pc <= pc_next;
+    assign imem_addr = pc;
+
+    // IF/ID
+    logic        ifid_valid;
+    logic [31:0] ifid_pc, ifid_instr;
+    always_ff @(posedge clk) begin
+        if (!rst_n || flush) begin
+            ifid_valid <= 1'b0; ifid_pc <= 32'd0; ifid_instr <= NOP;
+        end else if (!stall) begin
+            ifid_valid <= 1'b1; ifid_pc <= pc; ifid_instr <= imem_rdata;
+        end
+    end
+
