@@ -65,3 +65,29 @@ module riscv_core (
                   .raddr1(id_rs1), .raddr2(id_rs2), .rdata1(id_rs1_val), .rdata2(id_rs2_val),
                   .dbg_addr(dbg_reg_addr), .dbg_data(dbg_reg_data));
 
+    // ID/EX
+    logic        idex_valid, idex_reg_write, idex_mem_read, idex_mem_write, idex_alu_src_imm, idex_alu_a_pc;
+    logic        idex_is_branch, idex_is_jal, idex_is_jalr, idex_is_ebreak;
+    logic [3:0]  idex_alu_op;
+    logic [2:0]  idex_funct3;
+    logic [4:0]  idex_rs1, idex_rs2, idex_rd;
+    logic [31:0] idex_pc, idex_rs1_val, idex_rs2_val, idex_imm;
+
+    wire id_bubble = !rst_n || flush || stall || !ifid_valid;
+    always_ff @(posedge clk) begin
+        if (id_bubble) begin
+            idex_valid <= 1'b0; idex_reg_write <= 1'b0; idex_mem_read <= 1'b0; idex_mem_write <= 1'b0;
+            idex_is_branch <= 1'b0; idex_is_jal <= 1'b0; idex_is_jalr <= 1'b0; idex_is_ebreak <= 1'b0;
+            idex_alu_src_imm <= 1'b0; idex_alu_a_pc <= 1'b0; idex_alu_op <= 4'd0; idex_funct3 <= 3'd0;
+            idex_rs1 <= 5'd0; idex_rs2 <= 5'd0; idex_rd <= 5'd0;
+            idex_pc <= 32'd0; idex_rs1_val <= 32'd0; idex_rs2_val <= 32'd0; idex_imm <= 32'd0;
+        end else begin
+            idex_valid <= 1'b1; idex_reg_write <= c_reg_write; idex_mem_read <= c_mem_read; idex_mem_write <= c_mem_write;
+            idex_is_branch <= c_is_branch; idex_is_jal <= c_is_jal; idex_is_jalr <= c_is_jalr; idex_is_ebreak <= c_is_ebreak;
+            idex_alu_src_imm <= c_alu_src_imm; idex_alu_a_pc <= c_alu_a_pc; idex_alu_op <= c_alu_op;
+            idex_funct3 <= ifid_instr[14:12];
+            idex_rs1 <= c_uses_rs1 ? id_rs1 : 5'd0; idex_rs2 <= c_uses_rs2 ? id_rs2 : 5'd0; idex_rd <= id_rd;
+            idex_pc <= ifid_pc; idex_rs1_val <= id_rs1_val; idex_rs2_val <= id_rs2_val; idex_imm <= id_imm;
+        end
+    end
+
