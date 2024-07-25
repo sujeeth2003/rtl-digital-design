@@ -45,3 +45,23 @@ module riscv_core (
         end
     end
 
+    // -------------------------------------------------------------- ID
+    logic        c_reg_write, c_mem_read, c_mem_write, c_alu_src_imm, c_alu_a_pc, c_is_branch, c_is_jal, c_is_jalr, c_is_ebreak;
+    logic        c_uses_rs1, c_uses_rs2;
+    logic [3:0]  c_alu_op;
+    logic [31:0] id_imm, id_rs1_val, id_rs2_val;
+    wire  [4:0]  id_rs1 = ifid_instr[19:15], id_rs2 = ifid_instr[24:20], id_rd = ifid_instr[11:7];
+
+    control u_ctl (.instr(ifid_instr), .reg_write(c_reg_write), .mem_read(c_mem_read), .mem_write(c_mem_write),
+                   .alu_src_imm(c_alu_src_imm), .alu_a_pc(c_alu_a_pc), .alu_op(c_alu_op), .is_branch(c_is_branch),
+                   .is_jal(c_is_jal), .is_jalr(c_is_jalr), .is_ebreak(c_is_ebreak), .uses_rs1(c_uses_rs1), .uses_rs2(c_uses_rs2));
+    imm_gen u_imm (.instr(ifid_instr), .imm(id_imm));
+
+    // write-back signals (declared here, driven in WB)
+    logic        wb_we;
+    logic [4:0]  wb_rd;
+    logic [31:0] wb_data;
+    regfile u_rf (.clk(clk), .we(wb_we), .waddr(wb_rd), .wdata(wb_data),
+                  .raddr1(id_rs1), .raddr2(id_rs2), .rdata1(id_rs1_val), .rdata2(id_rs2_val),
+                  .dbg_addr(dbg_reg_addr), .dbg_data(dbg_reg_data));
+
