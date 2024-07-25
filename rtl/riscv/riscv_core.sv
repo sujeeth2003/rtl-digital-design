@@ -169,3 +169,18 @@ module riscv_core (
         end
     end
 
+    // -------------------------------------------------------------- WB
+    assign wb_we   = memwb_valid && memwb_reg_write && !halted_r;
+    assign wb_rd   = memwb_rd;
+    assign wb_data = memwb_data;
+
+    // statistics
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin retired <= 32'd0; stalls <= 32'd0; flushes <= 32'd0; end
+        else begin
+            if (memwb_valid && !halted_r) retired <= retired + 32'd1;
+            if (stall && !flush)          stalls  <= stalls  + 32'd1;
+            if (flush)                    flushes <= flushes + 32'd1;
+        end
+    end
+endmodule
