@@ -91,3 +91,20 @@ module riscv_core (
         end
     end
 
+    // -------------------------------------------------------------- EX
+    logic [1:0]  fwd_a, fwd_b;
+    logic        exmem_valid, exmem_reg_write, exmem_mem_read, exmem_mem_write, exmem_is_ebreak;
+    logic [4:0]  exmem_rd;
+    logic [2:0]  exmem_funct3;
+    logic [31:0] exmem_result, exmem_store_data;
+    logic        memwb_valid, memwb_reg_write;
+    logic [4:0]  memwb_rd;
+    logic [31:0] memwb_data;
+
+    hazard_unit u_haz (.ex_rs1(idex_rs1), .ex_rs2(idex_rs2), .mem_rd(exmem_rd), .wb_rd(memwb_rd),
+                       .mem_reg_write(exmem_valid & exmem_reg_write), .wb_reg_write(memwb_valid & memwb_reg_write),
+                       .fwd_a(fwd_a), .fwd_b(fwd_b),
+                       .id_rs1(id_rs1), .id_rs2(id_rs2), .id_uses_rs1(c_uses_rs1 & ifid_valid), .id_uses_rs2(c_uses_rs2 & ifid_valid),
+                       .ex_mem_read(idex_mem_read), .ex_valid(idex_valid), .ex_rd(idex_rd),
+                       .stall(stall), .ex_taken(ex_taken), .flush(flush));
+
