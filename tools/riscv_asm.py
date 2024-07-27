@@ -36,3 +36,13 @@ def reg(tok):
     return REGS[t]
 
 
+def num(tok, labels=None, pc=None, relative=False):
+    t = tok.strip()
+    if labels is not None and t in labels:
+        return labels[t] - pc if relative else labels[t]
+    try:
+        return int(t, 0)
+    except ValueError:
+        raise AsmError(f"bad number or unknown label '{tok}'")
+
+
