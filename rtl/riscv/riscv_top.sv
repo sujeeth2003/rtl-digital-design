@@ -49,3 +49,17 @@ module dmem (
     wire [31:0] word = mem[idx];
     assign dbg_data = mem[dbg_addr];
 
+    logic [7:0]  b;
+    logic [15:0] h;
+    always_comb begin
+        b = word[8*off +: 8];
+        h = off[1] ? word[31:16] : word[15:0];
+        case (funct3)
+            3'b000:  rdata = {{24{b[7]}}, b};
+            3'b001:  rdata = {{16{h[15]}}, h};
+            3'b100:  rdata = {24'd0, b};
+            3'b101:  rdata = {16'd0, h};
+            default: rdata = word;
+        endcase
+    end
+
