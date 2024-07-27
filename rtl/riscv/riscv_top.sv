@@ -63,3 +63,18 @@ module dmem (
         endcase
     end
 
+    logic [31:0] wword;                   // read-modify-write of the addressed word
+    always_comb begin
+        wword = word;
+        case (funct3[1:0])
+            2'b00:   wword[8*off +: 8] = wdata[7:0];
+            2'b01:   if (off[1]) wword[31:16] = wdata[15:0]; else wword[15:0] = wdata[15:0];
+            default: wword = wdata;
+        endcase
+    end
+
+    always_ff @(posedge clk) begin
+        if (init_we)  mem[init_addr] <= init_data;
+        else if (we)  mem[idx] <= wword;
+    end
+endmodule
