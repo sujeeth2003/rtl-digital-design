@@ -58,3 +58,9 @@ def b_type(off, rs2, rs1, f3):
     return (((off >> 12) & 1) << 31) | (((off >> 5) & 0x3F) << 25) | (rs2 << 20) | (rs1 << 15) | (f3 << 12) | (((off >> 1) & 0xF) << 8) | (((off >> 11) & 1) << 7) | 0x63
 
 
+def j_type(off, rd):
+    if off % 2 or not -(1 << 20) <= off < (1 << 20):
+        raise AsmError(f"jump offset {off} out of range")
+    return (((off >> 20) & 1) << 31) | (((off >> 1) & 0x3FF) << 21) | (((off >> 11) & 1) << 20) | (((off >> 12) & 0xFF) << 12) | (rd << 7) | 0x6F
+
+
