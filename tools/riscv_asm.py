@@ -52,3 +52,9 @@ def s_type(imm, rs2, rs1, f3, op): return (((imm >> 5) & 0x7F) << 25) | (rs2 << 
 def u_type(imm, rd, op): return ((imm & 0xFFFFF) << 12) | (rd << 7) | op
 
 
+def b_type(off, rs2, rs1, f3):
+    if off % 2 or not -4096 <= off < 4096:
+        raise AsmError(f"branch offset {off} out of range")
+    return (((off >> 12) & 1) << 31) | (((off >> 5) & 0x3F) << 25) | (rs2 << 20) | (rs1 << 15) | (f3 << 12) | (((off >> 1) & 0xF) << 8) | (((off >> 11) & 1) << 7) | 0x63
+
+
