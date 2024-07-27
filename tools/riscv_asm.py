@@ -46,3 +46,9 @@ def num(tok, labels=None, pc=None, relative=False):
         raise AsmError(f"bad number or unknown label '{tok}'")
 
 
+def r_type(f7, rs2, rs1, f3, rd, op): return (f7 << 25) | (rs2 << 20) | (rs1 << 15) | (f3 << 12) | (rd << 7) | op
+def i_type(imm, rs1, f3, rd, op): return ((imm & 0xFFF) << 20) | (rs1 << 15) | (f3 << 12) | (rd << 7) | op
+def s_type(imm, rs2, rs1, f3, op): return (((imm >> 5) & 0x7F) << 25) | (rs2 << 20) | (rs1 << 15) | (f3 << 12) | ((imm & 0x1F) << 7) | op
+def u_type(imm, rd, op): return ((imm & 0xFFFFF) << 12) | (rd << 7) | op
+
+
