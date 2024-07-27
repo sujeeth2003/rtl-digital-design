@@ -64,3 +64,35 @@ def j_type(off, rd):
     return (((off >> 20) & 1) << 31) | (((off >> 1) & 0x3FF) << 21) | (((off >> 11) & 1) << 20) | (((off >> 12) & 0xFF) << 12) | (rd << 7) | 0x6F
 
 
+def split_ops(s):
+    return [x.strip() for x in s.split(",")] if s.strip() else []
+
+
+def expand_pseudo(mn, ops):
+    """Return a list of (mnemonic, operands) for pseudo-instructions."""
+    if mn == "nop": return [("addi", ["x0", "x0", "0"])]
+    if mn == "mv": return [("addi", [ops[0], ops[1], "0"])]
+    if mn == "not": return [("xori", [ops[0], ops[1], "-1"])]
+    if mn == "neg": return [("sub", [ops[0], "x0", ops[1]])]
+    if mn == "seqz": return [("sltiu", [ops[0], ops[1], "1"])]
+    if mn == "snez": return [("sltu", [ops[0], "x0", ops[1]])]
+    if mn == "j": return [("jal", ["x0", ops[0]])]
+    if mn == "jr": return [("jalr", ["x0", ops[0], "0"])]
+    if mn == "ret": return [("jalr", ["x0", "ra", "0"])]
+    if mn == "beqz": return [("beq", [ops[0], "x0", ops[1]])]
+    if mn == "bnez": return [("bne", [ops[0], "x0", ops[1]])]
+    if mn == "blez": return [("bge", ["x0", ops[0], ops[1]])]
+    if mn == "bgez": return [("bge", [ops[0], "x0", ops[1]])]
+    if mn == "bltz": return [("blt", [ops[0], "x0", ops[1]])]
+    if mn == "bgtz": return [("blt", ["x0", ops[0], ops[1]])]
+    if mn == "ble": return [("bge", [ops[1], ops[0], ops[2]])]
+    if mn == "bgt": return [("blt", [ops[1], ops[0], ops[2]])]
+    if mn == "bleu": return [("bgeu", [ops[1], ops[0], ops[2]])]
+    if mn == "bgtu": return [("bltu", [ops[1], ops[0], ops[2]])]
+    if mn == "li":
+        v = int(ops[1], 0)
+        v32 = v & 0xFFFFFFFF
+        sv = v32 - (1 << 32) if v32 & 0x80000000 else v32
+        if -2048 <= sv < 2048:
+            return [("addi", [ops[0], "x0", str(sv)])]
+        lo = ((sv & 0xFFF) ^ 0x800) - 0x800          # sign-extended low 12 bits
