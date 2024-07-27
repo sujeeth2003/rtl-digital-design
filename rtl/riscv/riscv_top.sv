@@ -31,3 +31,21 @@ module riscv_top (
                  .dbg_addr(dbg_mem_addr), .dbg_data(dbg_mem_data));
 endmodule
 
+// 4 KiB data RAM: asynchronous read with byte/half/word sign- or zero-extension,
+// synchronous write with byte enables. Little-endian. Addresses wrap at 4 KiB.
+module dmem (
+    input  logic        clk,
+    input  logic [31:0] addr, wdata,
+    input  logic        we,
+    input  logic [2:0]  funct3,           // 000 B, 001 H, 010 W, 100 BU, 101 HU
+    output logic [31:0] rdata,
+    input  logic        init_we, input logic [9:0] init_addr, input logic [31:0] init_data,
+    input  logic [9:0]  dbg_addr,
+    output logic [31:0] dbg_data
+);
+    logic [31:0] mem [0:1023];
+    wire [9:0] idx = addr[11:2];
+    wire [1:0] off = addr[1:0];
+    wire [31:0] word = mem[idx];
+    assign dbg_data = mem[dbg_addr];
+
