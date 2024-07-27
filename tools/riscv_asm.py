@@ -25,3 +25,14 @@ STORES = {"sb": 0, "sh": 1, "sw": 2}
 BRANCHES = {"beq": 0, "bne": 1, "blt": 4, "bge": 5, "bltu": 6, "bgeu": 7}
 
 
+class AsmError(Exception):
+    pass
+
+
+def reg(tok):
+    t = tok.strip()
+    if t not in REGS:
+        raise AsmError(f"bad register '{tok}'")
+    return REGS[t]
+
+
