@@ -103,3 +103,34 @@ def expand_pseudo(mn, ops):
     return [(mn, ops)]
 
 
+def assemble(text):
+    items = []      # (kind, mnemonic, operands, source line number)
+    labels = {}
+    for ln, raw in enumerate(text.splitlines(), 1):
+        line = raw.split("#")[0].strip()
+        while True:
+            m = re.match(r"^([A-Za-z_.][\w.]*):\s*(.*)$", line)
+            if not m: break
+            labels[m.group(1)] = len([i for i in items]) * 4
+            line = m.group(2)
+        if not line: continue
+        parts = line.split(None, 1)
+        mn, ops = parts[0].lower(), split_ops(parts[1] if len(parts) > 1 else "")
+        if mn == ".word":
+            for o in ops: items.append((".word", o, [], ln))
+            continue
+        try:
+            for m2, o2 in expand_pseudo(mn, ops): items.append(("insn", m2, o2, ln))
+        except (IndexError, ValueError):
+            raise AsmError(f"line {ln}: bad operands for '{mn}'")
+    words = []
+    for idx, (kind, mn, ops, ln) in enumerate(items):
+        pc = idx * 4
+        try:
+            if kind == ".word":
+                words.append(int(mn, 0) & 0xFFFFFFFF); continue
+            words.append(encode(mn, ops, labels, pc) & 0xFFFFFFFF)
+        except AsmError as e:
+            raise AsmError(f"line {ln}: {e}")
+    return words, labels
+
