@@ -96,3 +96,10 @@ def expand_pseudo(mn, ops):
         if -2048 <= sv < 2048:
             return [("addi", [ops[0], "x0", str(sv)])]
         lo = ((sv & 0xFFF) ^ 0x800) - 0x800          # sign-extended low 12 bits
+        hi = ((v32 - (lo & 0xFFFFFFFF)) >> 12) & 0xFFFFF
+        out = [("lui", [ops[0], str(hi)])]
+        if lo: out.append(("addi", [ops[0], ops[0], str(lo)]))
+        return out
+    return [(mn, ops)]
+
+
