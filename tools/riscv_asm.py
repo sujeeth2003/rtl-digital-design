@@ -134,3 +134,35 @@ def assemble(text):
             raise AsmError(f"line {ln}: {e}")
     return words, labels
 
+
+def encode(mn, ops, labels, pc):
+    if mn in R_OPS:
+        f3, f7 = R_OPS[mn]; return r_type(f7, reg(ops[2]), reg(ops[1]), f3, reg(ops[0]), 0x33)
+    if mn in I_OPS:
+        imm = num(ops[2])
+        if not -2048 <= imm < 2048: raise AsmError(f"immediate {imm} out of 12-bit range")
+        return i_type(imm, reg(ops[1]), I_OPS[mn], reg(ops[0]), 0x13)
+    if mn in SH_OPS:
+        f3, f7 = SH_OPS[mn]; sh = num(ops[2])
+        if not 0 <= sh < 32: raise AsmError("shift amount out of range")
+        return i_type((f7 << 5) | sh, reg(ops[1]), f3, reg(ops[0]), 0x13)
+    if mn in LOADS or mn in STORES:
+        m = re.match(r"^(-?\w+)\((\w+)\)$", ops[1].replace(" ", ""))
+        if not m: raise AsmError(f"bad memory operand '{ops[1]}'")
+        imm, base = num(m.group(1)), reg(m.group(2))
+        if not -2048 <= imm < 2048: raise AsmError("offset out of range")
+        if mn in LOADS: return i_type(imm, base, LOADS[mn], reg(ops[0]), 0x03)
+        return s_type(imm, reg(ops[0]), base, STORES[mn], 0x23)
+    if mn in BRANCHES:
+        return b_type(num(ops[2], labels, pc, True), reg(ops[1]), reg(ops[0]), BRANCHES[mn])
+    if mn == "jal":
+        if len(ops) == 1: ops = ["ra", ops[0]]
+        return j_type(num(ops[1], labels, pc, True), reg(ops[0]))
+    if mn == "jalr":
+        if len(ops) == 1: ops = ["ra", ops[0], "0"]
+        return i_type(num(ops[2]), reg(ops[1]), 0, reg(ops[0]), 0x67)
+    if mn == "lui": return u_type(num(ops[1]), reg(ops[0]), 0x37)
+    if mn == "auipc": return u_type(num(ops[1]), reg(ops[0]), 0x17)
+    if mn == "ebreak": return 0x00100073
+    raise AsmError(f"unknown instruction '{mn}'")
+
