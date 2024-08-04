@@ -166,3 +166,15 @@ def encode(mn, ops, labels, pc):
     if mn == "ebreak": return 0x00100073
     raise AsmError(f"unknown instruction '{mn}'")
 
+
+def main():
+    if len(sys.argv) != 3:
+        sys.exit(__doc__)
+    words, _ = assemble(open(sys.argv[1]).read())
+    with open(sys.argv[2], "w") as f:
+        f.write("\n".join(f"{w:08x}" for w in words) + "\n")
+    print(f"{sys.argv[1]}: {len(words)} words")
+
+
+if __name__ == "__main__":
+    main()
