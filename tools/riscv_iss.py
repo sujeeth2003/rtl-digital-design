@@ -46,3 +46,35 @@ class ISS:
             w = val & M32
         self.dmem[i] = w & M32
 
+    def step(self):
+        ins = self.imem[(self.pc >> 2) & 1023]
+        op, rd, f3 = ins & 0x7F, (ins >> 7) & 31, (ins >> 12) & 7
+        rs1, rs2, f7 = (ins >> 15) & 31, (ins >> 20) & 31, ins >> 25
+        a, b = self.x[rs1], self.x[rs2]
+        nxt = (self.pc + 4) & M32
+        wr = None
+        if op == 0x33:
+            sh = b & 31
+            if f3 == 0: wr = (a - b) if f7 & 0x20 else (a + b)
+            elif f3 == 1: wr = a << sh
+            elif f3 == 2: wr = int(s32(a) < s32(b))
+            elif f3 == 3: wr = int(a < b)
+            elif f3 == 4: wr = a ^ b
+            elif f3 == 5: wr = (s32(a) >> sh) if f7 & 0x20 else (a >> sh)
+            elif f3 == 6: wr = a | b
+            else: wr = a & b
+        elif op == 0x13:
+            imm = sext(ins >> 20, 12); sh = (ins >> 20) & 31
+            if f3 == 0: wr = a + imm
+            elif f3 == 1: wr = a << sh
+            elif f3 == 2: wr = int(s32(a) < imm)
+            elif f3 == 3: wr = int(a < (imm & M32))
+            elif f3 == 4: wr = a ^ (imm & M32)
+            elif f3 == 5: wr = (s32(a) >> sh) if (ins >> 30) & 1 else (a >> sh)
+            elif f3 == 6: wr = a | (imm & M32)
+            else: wr = a & (imm & M32)
+        elif op == 0x03: wr = self.load((a + sext(ins >> 20, 12)) & M32, f3)
+        elif op == 0x23:
+            imm = sext(((ins >> 25) << 5) | ((ins >> 7) & 31), 12)
+            self.store((a + imm) & M32, b, f3)
+        elif op == 0x63:
