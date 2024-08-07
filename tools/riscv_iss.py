@@ -78,3 +78,24 @@ class ISS:
             imm = sext(((ins >> 25) << 5) | ((ins >> 7) & 31), 12)
             self.store((a + imm) & M32, b, f3)
         elif op == 0x63:
+            imm = sext(((ins >> 31) << 12) | (((ins >> 7) & 1) << 11) | (((ins >> 25) & 0x3F) << 5) | (((ins >> 8) & 0xF) << 1), 13)
+            cond = {0: a == b, 1: a != b, 4: s32(a) < s32(b), 5: s32(a) >= s32(b), 6: a < b, 7: a >= b}.get(f3, False)
+            if cond: nxt = (self.pc + imm) & M32
+        elif op == 0x6F:
+            imm = sext(((ins >> 31) << 20) | (((ins >> 12) & 0xFF) << 12) | (((ins >> 20) & 1) << 11) | (((ins >> 21) & 0x3FF) << 1), 21)
+            wr = self.pc + 4; nxt = (self.pc + imm) & M32
+        elif op == 0x67:
+            wr = self.pc + 4; nxt = ((a + sext(ins >> 20, 12)) & M32) & ~1
+        elif op == 0x37: wr = ins & 0xFFFFF000
+        elif op == 0x17: wr = self.pc + (ins & 0xFFFFF000)
+        elif op == 0x73 and (ins >> 20) == 1 and f3 == 0:
+            self.halted = True
+            return
+        if wr is not None and rd != 0: self.x[rd] = wr & M32
+        self.pc = nxt
+        self.retired += 1
+
+    def run(self, max_steps=2_000_000):
+        while not self.halted and self.retired < max_steps:
+            self.step()
+        return self
