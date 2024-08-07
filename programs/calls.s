@@ -13,3 +13,22 @@
         li   s4, 222
         ebreak
 
+fact:   addi sp, sp, -8
+        sw   ra, 4(sp)
+        sw   a0, 0(sp)
+        li   t0, 1
+        ble  a0, t0, fbase
+        addi a0, a0, -1
+        jal  ra, fact
+        lw   t1, 0(sp)        # load-use into the multiply loop below
+        mv   t2, a0
+        li   a0, 0
+mul:    beqz t1, fdone
+        add  a0, a0, t2
+        addi t1, t1, -1
+        j    mul
+fbase:  li   a0, 1
+fdone:  lw   ra, 4(sp)
+        addi sp, sp, 8
+        ret
+
