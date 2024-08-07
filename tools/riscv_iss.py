@@ -22,3 +22,27 @@ class ISS:
         self.retired = 0
         self.halted = False
 
+    def load(self, addr, f3):
+        word = self.dmem[(addr >> 2) & 1023]
+        off = addr & 3
+        if f3 in (0, 4):
+            b = (word >> (8 * off)) & 0xFF
+            return sext(b, 8) & M32 if f3 == 0 else b
+        if f3 in (1, 5):
+            h = (word >> 16) & 0xFFFF if off & 2 else word & 0xFFFF
+            return sext(h, 16) & M32 if f3 == 1 else h
+        return word
+
+    def store(self, addr, val, f3):
+        i = (addr >> 2) & 1023
+        off = addr & 3
+        w = self.dmem[i]
+        if f3 == 0:
+            w = (w & ~(0xFF << (8 * off))) | ((val & 0xFF) << (8 * off))
+        elif f3 == 1:
+            sh = 16 if off & 2 else 0
+            w = (w & ~(0xFFFF << sh)) | ((val & 0xFFFF) << sh)
+        else:
+            w = val & M32
+        self.dmem[i] = w & M32
+
