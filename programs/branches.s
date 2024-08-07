@@ -30,3 +30,21 @@ loop:   lw   a3, 0(s0)
         addi a1, a1, 1
         beq  a1, a2, done     # loop 10 times
         bne  a3, x0, loop     # branch depends on a load
+        j    bad
+done:   add  a4, a1, a0
+        # nested loops
+        li   s1, 0
+        li   t3, 1
+outer:  li   t4, 1
+inner:  add  t5, t3, x0
+        slli t5, t5, 1
+        add  s1, s1, t5
+        addi t4, t4, 1
+        li   t6, 6
+        blt  t4, t6, inner
+        addi t3, t3, 1
+        li   t6, 6
+        blt  t3, t6, outer
+        ebreak
+bad:    li   a5, -1
+        ebreak
