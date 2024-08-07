@@ -32,3 +32,10 @@ fdone:  lw   ra, 4(sp)
         addi sp, sp, 8
         ret
 
+sumto:  li   t0, 0
+sl:     beqz a0, sret
+        add  t0, t0, a0
+        addi a0, a0, -1
+        j    sl
+sret:   mv   a0, t0
+        ret
