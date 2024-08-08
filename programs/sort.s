@@ -30,3 +30,17 @@ noswap: addi t2, t2, 1
         addi s1, s1, -1
         bnez s1, pass
         li   a0, 0
+        li   a1, 0
+        li   t2, 0
+chk:    slli t3, t2, 2
+        add  t3, t3, s0
+        lw   t4, 0(t3)
+        add  a0, a0, t4
+        bgt  a1, t4, bad
+        mv   a1, t4
+        addi t2, t2, 1
+        blt  t2, t1, chk
+        li   a2, 1            # sorted OK
+        ebreak
+bad:    li   a2, 0
+        ebreak
