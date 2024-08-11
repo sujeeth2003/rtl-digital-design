@@ -46,3 +46,22 @@ def gen(seed, length=80):
             sz = rnd.choice(["sb", "sh", "sw"])
             step = {"sb": 1, "sh": 2, "sw": 4}[sz]
             lines.append(f"{sz} {r()}, {rnd.randrange(0, 64, step)}(x{BASE})")
+        elif k < 0.95:
+            label_id += 1
+            lab = f"L{seed}_{label_id}"
+            lines.append(f"{rnd.choice(B_OPS)} {r()}, {r()}, {lab}")
+            pending.append([lab, rnd.randint(1, 4)])
+        else:
+            label_id += 1
+            lab = f"L{seed}_{label_id}"
+            lines.append(f"jal {r()}, {lab}" if rnd.random() < 0.5 else f"j {lab}")
+            pending.append([lab, rnd.randint(1, 3)])
+    for p in pending:
+        lines.append(f"{p[0]}:")
+    lines.append("ebreak")
+    return "\n".join(lines) + "\n"
+
+
+if __name__ == "__main__":
+    import sys
+    print(gen(int(sys.argv[1]) if len(sys.argv) > 1 else 1))
