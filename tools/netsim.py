@@ -77,3 +77,17 @@ class Netlist:
         self.order = self._toposort(comb)
         self.mem_data = {}
         self.memid = {name: str(c["parameters"].get("MEMID", name)) for name, c in mod["cells"].items() if c["type"] == "$mem_v2"}
+        self.reset()
+
+    def reset(self):
+        """Zero every net, flop and memory (power-on state)."""
+        self.v = [0] * len(self.v)
+        self.v[self.C1] = 1
+        self.mem_data = {name: [0] * par["SIZE"] for (_, par, _, _, name) in self.mems}
+
+    def memory(self, contains):
+        """Contents of the memory whose MEMID contains the given text (e.g. 'dmem')."""
+        for name, mid in self.memid.items():
+            if contains in mid: return self.mem_data[name]
+        raise KeyError(contains)
+
