@@ -91,3 +91,35 @@ class Netlist:
             if contains in mid: return self.mem_data[name]
         raise KeyError(contains)
 
+    def _b(self, b):
+        if isinstance(b, int): return b
+        return self.C1 if b == "1" else self.C0
+
+    # ---------------------------------------------------------------- scheduling
+    def _toposort(self, comb):
+        drivers = {}
+        allcells = list(comb) + [m for m in self.mems]
+        for i, (t, par, con, d, name) in enumerate(allcells):
+            for port, dirn in d.items():
+                if dirn == "output" and not (t == "$mem_v2" and not port.startswith("RD_DATA")):
+                    for b in con.get(port, []): drivers[b] = i
+        deps = [set() for _ in allcells]
+        users = [[] for _ in allcells]
+        for i, (t, par, con, d, name) in enumerate(allcells):
+            for port, dirn in d.items():
+                if dirn == "input":
+                    if t == "$mem_v2" and not port.startswith("RD_"): continue      # write side is sequential
+                    for b in con.get(port, []):
+                        j = drivers.get(b)
+                        if j is not None and j != i and j not in deps[i]:
+                            deps[i].add(j); users[j].append(i)
+        ready = [i for i in range(len(allcells)) if not deps[i]]
+        order = []
+        indeg = [len(x) for x in deps]
+        while ready:
+            i = ready.pop()
+            order.append(allcells[i])
+            for u in users[i]:
+                indeg[u] -= 1
+                if indeg[u] == 0: ready.append(u)
+        if len(order) != len(allcells):
