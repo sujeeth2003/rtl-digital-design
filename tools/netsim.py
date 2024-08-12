@@ -138,3 +138,35 @@ class Netlist:
         for i, b in enumerate(bits):
             v[b] = (val >> i) & 1
 
+    def set(self, name, val):
+        self.wr(self.names[name], val)
+
+    def get(self, name):
+        return self.rd(self.names[name])
+
+    # ---------------------------------------------------------------- comb cell evaluation
+    @staticmethod
+    def _ext(x, w, signed, to):
+        x &= (1 << w) - 1
+        if signed and (x >> (w - 1)) & 1: x -= 1 << w
+        return x & ((1 << to) - 1) if to else x
+
+    def _eval_cell(self, cell):
+        t, par, con, d, name = cell
+        if t == "$mem_v2":
+            for r in range(par["RD_PORTS"]):
+                aw = par["ABITS"]; w = par["WIDTH"]
+                addr = self.rd(con["RD_ADDR"][r * aw:(r + 1) * aw]) - par["OFFSET"]
+                mem = self.mem_data[name]
+                self.wr(con["RD_DATA"][r * w:(r + 1) * w], mem[addr] if 0 <= addr < len(mem) else 0)
+            return
+        g = lambda p: self.rd(con[p])
+        yw = par.get("Y_WIDTH", 0)
+        ym = (1 << yw) - 1 if yw else 0
+        aw, bw = par.get("A_WIDTH", 0), par.get("B_WIDTH", 0)
+        asg, bsg = par.get("A_SIGNED", 0), par.get("B_SIGNED", 0)
+        y = None
+        if t in ("$not", "$pos", "$neg"):
+            a = self._ext(g("A"), aw, asg, yw)
+            y = (~a if t == "$not" else -a if t == "$neg" else a) & ym
+        elif t in ("$and", "$or", "$xor", "$xnor"):
