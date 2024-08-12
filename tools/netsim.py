@@ -21,3 +21,20 @@ import subprocess
 import sys
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def build_json(files, top, params=None):
+    """Run Yosys to produce a flattened word-level JSON netlist and return it parsed."""
+    yosys = os.environ.get("YOSYS", "").split() or [shutil.which("yosys") or shutil.which("yowasp-yosys")]
+    if not yosys[0]:
+        sys.exit("yosys not found (set $YOSYS)")
+    (ROOT / "build").mkdir(exist_ok=True)
+    chp = "".join(f"chparam -set {k} {v} {top}; " for k, v in (params or {}).items())
+    script = (f"read_verilog -sv {' '.join(files)}; {chp}hierarchy -top {top}; proc; flatten; opt -fast; "
+              f"memory -nomap -nordff; opt_clean; write_json build/_netlist.json")
+    subprocess.run(yosys + ["-q", "-p", script], cwd=ROOT, check=True)
+    p = ROOT / "build" / "_netlist.json"
+    data = json.loads(p.read_text())
+    return data
+
