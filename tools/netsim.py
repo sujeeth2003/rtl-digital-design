@@ -45,3 +45,35 @@ def _pint(v):
     return int(v, 2) if v and set(v) <= {"0", "1"} else 0
 
 
+class Netlist:
+    def __init__(self, js):
+        mod = next(iter(js["modules"].values())) if len(js["modules"]) == 1 else \
+            next(m for m in js["modules"].values() if m.get("attributes", {}).get("top"))
+        nmax = 1
+        for w in mod["netnames"].values():
+            for b in w["bits"]:
+                if isinstance(b, int): nmax = max(nmax, b + 1)
+        for c in mod["cells"].values():
+            for bits in c["connections"].values():
+                for b in bits:
+                    if isinstance(b, int): nmax = max(nmax, b + 1)
+        self.C0, self.C1 = nmax, nmax + 1
+        self.v = [0] * (nmax + 2)
+        self.v[self.C1] = 1
+        self.ports = {n: p for n, p in mod["ports"].items()}
+        self.names = {n: w["bits"] for n, w in mod["netnames"].items()}
+        self.cells = []
+        self.ffs, self.mems, comb = [], [], []
+        for name, c in mod["cells"].items():
+            t = c["type"]
+            if t in ("$scopeinfo", "$print", "$check", "$assert", "$assume", "$cover"): continue   # no simulation effect
+            par = {k: _pint(x) for k, x in c["parameters"].items() if not isinstance(x, str) or set(x) <= {"0", "1"}}
+            con = {k: [self._b(b) for b in bits] for k, bits in c["connections"].items()}
+            d = c["port_directions"]
+            cell = (t, par, con, d, name)
+            if t.startswith("$dff") or t.startswith("$adff") or t.startswith("$sdff"): self.ffs.append(cell)
+            elif t == "$mem_v2": self.mems.append(cell)
+            else: comb.append(cell)
+        self.order = self._toposort(comb)
+        self.mem_data = {}
+        self.memid = {name: str(c["parameters"].get("MEMID", name)) for name, c in mod["cells"].items() if c["type"] == "$mem_v2"}
