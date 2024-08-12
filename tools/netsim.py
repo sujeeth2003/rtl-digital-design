@@ -38,3 +38,10 @@ def build_json(files, top, params=None):
     data = json.loads(p.read_text())
     return data
 
+
+def _pint(v):
+    if isinstance(v, int):
+        return v
+    return int(v, 2) if v and set(v) <= {"0", "1"} else 0
+
+
