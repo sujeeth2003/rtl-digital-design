@@ -25,3 +25,21 @@ static int load(const char* path, bool prog) {
   return n;
 }
 
+int main(int argc, char** argv) {
+  if (argc < 2) { std::fprintf(stderr, "usage: riscv_sim prog.hex [data.hex] [max_cycles]\n"); return 2; }
+  long max_cycles = argc > 3 ? std::atol(argv[3]) : 2000000;
+  t.p_rst__n.set<bool>(false);
+  if (load(argv[1], true) < 0) { std::fprintf(stderr, "cannot open %s\n", argv[1]); return 2; }
+  if (argc > 2 && argv[2][0] != '-' && load(argv[2], false) < 0) { std::fprintf(stderr, "cannot open %s\n", argv[2]); return 2; }
+  cycle(); cycle();
+  t.p_rst__n.set<bool>(true);
+
+  long cycles = 0;
+  while (!t.p_halted.get<bool>() && cycles < max_cycles) { cycle(); ++cycles; }
+  cycle(); cycle();   // let the pipeline settle after the halt
+  std::printf("halted %d\ncycles %ld\nretired %u\nstalls %u\nflushes %u\n", (int)t.p_halted.get<bool>(), cycles,
+              t.p_retired.get<uint32_t>(), t.p_stalls.get<uint32_t>(), t.p_flushes.get<uint32_t>());
+  for (uint32_t r = 0; r < 32; ++r) { t.p_dbg__reg__addr.set<uint32_t>(r); t.step(); std::printf("x%u %08x\n", r, t.p_dbg__reg__data.get<uint32_t>()); }
+  for (uint32_t a = 0; a < 1024; ++a) { t.p_dbg__mem__addr.set<uint32_t>(a); t.step(); std::printf("m%u %08x\n", a, t.p_dbg__mem__data.get<uint32_t>()); }
+  return t.p_halted.get<bool>() ? 0 : 1;
+}
