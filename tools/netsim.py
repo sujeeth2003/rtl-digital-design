@@ -123,3 +123,18 @@ class Netlist:
                 indeg[u] -= 1
                 if indeg[u] == 0: ready.append(u)
         if len(order) != len(allcells):
+            raise RuntimeError("combinational loop in netlist")
+        return order
+
+    # ---------------------------------------------------------------- bit/word helpers
+    def rd(self, bits):
+        v, r = self.v, 0
+        for i, b in enumerate(bits):
+            if v[b]: r |= 1 << i
+        return r
+
+    def wr(self, bits, val):
+        v = self.v
+        for i, b in enumerate(bits):
+            v[b] = (val >> i) & 1
+
