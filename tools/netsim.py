@@ -202,3 +202,18 @@ class Netlist:
                 a = g("A")
                 y = (a >> b) & ym if b < 4096 else 0
             else:                                    # $shift / $shiftx: signed shift amount
+                a = self._ext(g("A"), aw, asg, 0) if asg and t == "$shift" else g("A")
+                y = ((a >> b) if b >= 0 else (a << -b)) & ym if abs(b) < 4096 else 0
+        elif t == "$mux":
+            y = g("B") if g("S") else g("A")
+        elif t == "$pmux":
+            w, sw = par["WIDTH"], par["S_WIDTH"]
+            s, b = g("S"), g("B")
+            y = g("A")
+            for i in range(sw):
+                if (s >> i) & 1:
+                    y = (b >> (i * w)) & ((1 << w) - 1); break
+        else:
+            raise NotImplementedError(f"cell type {t}")
+        self.wr(con["Y"], y)
+
