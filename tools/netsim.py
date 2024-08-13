@@ -170,3 +170,35 @@ class Netlist:
             a = self._ext(g("A"), aw, asg, yw)
             y = (~a if t == "$not" else -a if t == "$neg" else a) & ym
         elif t in ("$and", "$or", "$xor", "$xnor"):
+            a, b = self._ext(g("A"), aw, asg, yw), self._ext(g("B"), bw, bsg, yw)
+            y = {"$and": a & b, "$or": a | b, "$xor": a ^ b, "$xnor": ~(a ^ b)}[t] & ym
+        elif t in ("$reduce_and", "$reduce_or", "$reduce_xor", "$reduce_xnor", "$reduce_bool", "$logic_not"):
+            a = g("A")
+            r = {"$reduce_and": a == (1 << aw) - 1, "$reduce_or": a != 0, "$reduce_bool": a != 0,
+                 "$reduce_xor": bin(a).count("1") & 1, "$reduce_xnor": not (bin(a).count("1") & 1), "$logic_not": a == 0}[t]
+            y = int(bool(r))
+        elif t in ("$logic_and", "$logic_or"):
+            a, b = g("A") != 0, g("B") != 0
+            y = int(a and b if t == "$logic_and" else a or b)
+        elif t in ("$eq", "$ne", "$eqx", "$nex", "$lt", "$le", "$gt", "$ge"):
+            signed = asg and bsg
+            w = max(aw, bw)
+            a = self._ext(g("A"), aw, signed, 0) if signed else g("A")
+            b = self._ext(g("B"), bw, signed, 0) if signed else g("B")
+            y = int({"$eq": a == b, "$eqx": a == b, "$ne": a != b, "$nex": a != b, "$lt": a < b, "$le": a <= b, "$gt": a > b, "$ge": a >= b}[t])
+        elif t in ("$add", "$sub", "$mul"):
+            a, b = self._ext(g("A"), aw, asg, yw), self._ext(g("B"), bw, bsg, yw)
+            y = (a + b if t == "$add" else a - b if t == "$sub" else a * b) & ym
+        elif t in ("$shl", "$sshl", "$shr", "$sshr", "$shift", "$shiftx"):
+            b = g("B")
+            if bsg and t in ("$shift", "$shiftx") and (b >> (bw - 1)) & 1: b -= 1 << bw
+            if t in ("$shl", "$sshl"):
+                a = self._ext(g("A"), aw, asg, yw) if asg else g("A")
+                y = (a << b) & ym if b < 4096 else 0
+            elif t == "$sshr" and asg:
+                a = self._ext(g("A"), aw, True, 0)
+                y = (a >> min(b, 4096)) & ym
+            elif t in ("$shr", "$sshr"):
+                a = g("A")
+                y = (a >> b) & ym if b < 4096 else 0
+            else:                                    # $shift / $shiftx: signed shift amount
