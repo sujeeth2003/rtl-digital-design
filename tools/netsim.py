@@ -217,3 +217,35 @@ class Netlist:
             raise NotImplementedError(f"cell type {t}")
         self.wr(con["Y"], y)
 
+    def eval(self):
+        for cell in self.order:
+            self._eval_cell(cell)
+
+    # ---------------------------------------------------------------- clock edge
+    def _posedge(self):
+        upd = []
+        for (t, par, con, d, name) in self.ffs:
+            pol = lambda k: par.get(k, 1)
+            q = None
+            if "ARST" in con and self.rd(con["ARST"]) == pol("ARST_POLARITY"):
+                q = par["ARST_VALUE"]
+            else:
+                en = self.rd(con["EN"]) == pol("EN_POLARITY") if "EN" in con else True
+                srst = "SRST" in con and self.rd(con["SRST"]) == pol("SRST_POLARITY")
+                if t == "$sdffce":                       # enable gates the reset
+                    if en: q = par["SRST_VALUE"] if srst else self.rd(con["D"])
+                elif t in ("$sdff", "$sdffe"):           # reset has priority over enable
+                    q = par["SRST_VALUE"] if srst else (self.rd(con["D"]) if en else None)
+                elif en:
+                    q = self.rd(con["D"])
+            if q is not None: upd.append((con["Q"], q))
+        wrs = []
+        for cell in self.mems:
+            t, par, con, d, name = cell
+            aw, w = par["ABITS"], par["WIDTH"]
+            for p in range(par["WR_PORTS"]):
+                en = self.rd(con["WR_EN"][p * w:(p + 1) * w])
+                if not en: continue
+                addr = self.rd(con["WR_ADDR"][p * aw:(p + 1) * aw]) - par["OFFSET"]
+                data = self.rd(con["WR_DATA"][p * w:(p + 1) * w])
+                wrs.append((name, addr, en, data))
