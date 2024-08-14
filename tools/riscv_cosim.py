@@ -13,3 +13,17 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent))
+import riscv_asm       # noqa: E402
+import riscv_iss       # noqa: E402
+import riscv_random    # noqa: E402
+
+ROOT = Path(__file__).resolve().parent.parent
+BUILD = ROOT / "build"
+EXE = BUILD / ("riscv_sim.exe" if os.name == "nt" else "riscv_sim")
+
+
+BACKEND = "auto"     # auto | cxxrtl | netsim
+_NL = None
+
+
