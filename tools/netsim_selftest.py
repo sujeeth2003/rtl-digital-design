@@ -36,3 +36,20 @@ def test_alu(n=3000):
     print(f"netsim alu: {n} random ops match the reference")
 
 
+def test_fifo(cycles=20000):
+    nl = Netlist(build_json(["rtl/fifo/sync_fifo.sv"], "sync_fifo"))
+    rnd = random.Random(2)
+    model, depth = deque(), 16
+    nl.set("rst_n", 0); nl.cycle(); nl.cycle(); nl.set("rst_n", 1)
+    for c in range(cycles):
+        wr, rd, wd = rnd.random() < (0.7 if (c // 400) % 2 else 0.3), rnd.random() < (0.3 if (c // 400) % 2 else 0.7), rnd.getrandbits(8)
+        nl.set("wr_en", wr); nl.set("rd_en", rd); nl.set("wr_data", wd); nl.set("clk", 0); nl.eval()
+        n = len(model)
+        assert nl.get("full") == (n == depth) and nl.get("empty") == (n == 0) and nl.get("count") == n, f"flags cycle {c}"
+        if n: assert nl.get("rd_data") == model[0], f"data cycle {c}"
+        do_wr, do_rd = wr and n < depth, rd and n > 0
+        nl.cycle()
+        if do_rd: model.popleft()
+        if do_wr: model.append(wd)
+    print(f"netsim fifo: {cycles} random cycles match the deque model")
+
