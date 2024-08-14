@@ -249,3 +249,14 @@ class Netlist:
                 addr = self.rd(con["WR_ADDR"][p * aw:(p + 1) * aw]) - par["OFFSET"]
                 data = self.rd(con["WR_DATA"][p * w:(p + 1) * w])
                 wrs.append((name, addr, en, data))
+        for bits, q in upd: self.wr(bits, q)
+        for name, addr, en, data in wrs:
+            mem = self.mem_data[name]
+            if 0 <= addr < len(mem):
+                mem[addr] = (mem[addr] & ~en) | (data & en)
+
+    def cycle(self, clk="clk"):
+        """One full clock: settle, rising edge, settle."""
+        self.set(clk, 0); self.eval()
+        self._posedge()
+        self.set(clk, 1); self.eval()
