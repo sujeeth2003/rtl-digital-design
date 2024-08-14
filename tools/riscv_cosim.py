@@ -27,3 +27,13 @@ BACKEND = "auto"     # auto | cxxrtl | netsim
 _NL = None
 
 
+def run_cxxrtl(words, hexfile):
+    hexfile.write_text("\n".join(f"{w:08x}" for w in words) + "\n")
+    p = subprocess.run([str(EXE), str(hexfile)], capture_output=True, text=True, timeout=120)
+    out = {}
+    for line in p.stdout.splitlines():
+        k, v = line.split()
+        out[k] = v
+    return out
+
+
