@@ -53,3 +53,8 @@ def test_fifo(cycles=20000):
         if do_wr: model.append(wd)
     print(f"netsim fifo: {cycles} random cycles match the deque model")
 
+
+if __name__ == "__main__":
+    test_alu()
+    test_fifo()
+    print("netsim self-test passed")
