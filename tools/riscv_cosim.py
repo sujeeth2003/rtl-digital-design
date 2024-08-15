@@ -79,3 +79,25 @@ def run_rtl(words, hexfile):
     return run_netsim(words)
 
 
+def compare(name, source):
+    words, _ = riscv_asm.assemble(source)
+    hexfile = BUILD / f"{name}.hex"
+    iss = riscv_iss.ISS(words).run()
+    rtl = run_rtl(words, hexfile)
+    errs = []
+    if not iss.halted: errs.append("ISS did not halt")
+    if rtl.get("halted") != "1": errs.append("RTL did not halt")
+    for i in range(32):
+        got = int(rtl.get(f"x{i}", "0"), 16)
+        if got != iss.x[i]:
+            errs.append(f"x{i}: rtl={got:08x} iss={iss.x[i]:08x}")
+    for a in range(1024):
+        got = int(rtl.get(f"m{a}", "0"), 16)
+        if got != iss.dmem[a]:
+            errs.append(f"mem[{a * 4:#x}]: rtl={got:08x} iss={iss.dmem[a]:08x}")
+            if len(errs) > 12: break
+    if int(rtl.get("retired", -1)) != iss.retired:
+        errs.append(f"retired: rtl={rtl.get('retired')} iss={iss.retired}")
+    stats = (iss.retired, int(rtl.get("cycles", 0)), int(rtl.get("stalls", 0)), int(rtl.get("flushes", 0)))
+    return errs, stats
+
