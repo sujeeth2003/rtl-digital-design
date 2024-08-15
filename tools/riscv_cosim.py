@@ -66,3 +66,16 @@ def run_netsim(words, max_cycles=300000):
     for a in range(1024): out[f"m{a}"] = f"{dm[a]:08x}"
     return out
 
+
+def run_rtl(words, hexfile):
+    global BACKEND
+    if BACKEND in ("auto", "cxxrtl") and EXE.exists():
+        try:
+            return run_cxxrtl(words, hexfile)
+        except OSError as e:          # e.g. the OS refused to launch a freshly built executable
+            if BACKEND == "cxxrtl": raise
+            print(f"[note] native simulator could not be launched ({e}); using the Python netlist simulator")
+            BACKEND = "netsim"
+    return run_netsim(words)
+
+
