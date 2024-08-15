@@ -37,3 +37,32 @@ def run_cxxrtl(words, hexfile):
     return out
 
 
+def run_netsim(words, max_cycles=300000):
+    """Same experiment as tb/riscv_tb.cpp, executed by the pure-Python netlist simulator."""
+    global _NL
+    from netsim import Netlist, build_json
+    if _NL is None:
+        files = ["rtl/alu/alu.sv"] + [f"rtl/riscv/{f}.sv" for f in ("riscv_top", "riscv_core", "regfile", "decode", "hazard_unit")]
+        _NL = Netlist(build_json(files, "riscv_top"))
+    nl = _NL
+    nl.reset()
+    nl.set("rst_n", 0)
+    nl.set("prog_we", 1)
+    for i, w in enumerate(words):
+        nl.set("prog_addr", i); nl.set("prog_data", w); nl.cycle()
+    nl.set("prog_we", 0)
+    nl.cycle(); nl.cycle()
+    nl.set("rst_n", 1)
+    cycles = 0
+    nl.eval()
+    while not nl.get("halted") and cycles < max_cycles:
+        nl.cycle(); cycles += 1
+    nl.cycle(); nl.cycle()
+    out = {"halted": str(nl.get("halted")), "cycles": str(cycles), "retired": str(nl.get("retired")),
+           "stalls": str(nl.get("stalls")), "flushes": str(nl.get("flushes"))}
+    for r in range(32):
+        nl.set("dbg_reg_addr", r); nl.eval(); out[f"x{r}"] = f"{nl.get('dbg_reg_data'):08x}"
+    dm = nl.memory("dmem")
+    for a in range(1024): out[f"m{a}"] = f"{dm[a]:08x}"
+    return out
+
