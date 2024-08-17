@@ -101,3 +101,39 @@ def compare(name, source):
     stats = (iss.retired, int(rtl.get("cycles", 0)), int(rtl.get("stalls", 0)), int(rtl.get("flushes", 0)))
     return errs, stats
 
+
+def main():
+    args = sys.argv[1:]
+    n_random = 0
+    if "--random" in args:
+        i = args.index("--random"); n_random = int(args[i + 1]); del args[i:i + 2]
+    BUILD.mkdir(exist_ok=True)
+    global BACKEND
+    if "--netsim" in args: BACKEND = "netsim"; args.remove("--netsim")
+    print(f"backend: {BACKEND}")
+    progs = [Path(a) for a in args] or sorted((ROOT / "programs").glob("*.s"))
+    failures = 0
+    tot_ret = tot_cyc = tot_st = tot_fl = 0
+    print(f"{'program':<14}{'retired':>9}{'cycles':>9}{'CPI':>7}{'stalls':>8}{'flushes':>9}  result")
+    for p in progs:
+        errs, (ret, cyc, st, fl) = compare(p.stem, p.read_text())
+        tot_ret += ret; tot_cyc += cyc; tot_st += st; tot_fl += fl
+        print(f"{p.stem:<14}{ret:>9}{cyc:>9}{cyc / max(ret, 1):>7.2f}{st:>8}{fl:>9}  {'PASS' if not errs else 'FAIL'}")
+        for e in errs[:8]: print("    ", e)
+        failures += bool(errs)
+    bad_seeds = []
+    for seed in range(n_random):
+        errs, (ret, cyc, st, fl) = compare(f"rand{seed}", riscv_random.gen(seed))
+        tot_ret += ret; tot_cyc += cyc; tot_st += st; tot_fl += fl
+        if errs:
+            failures += 1; bad_seeds.append(seed)
+            print(f"random seed {seed}: FAIL"); [print("    ", e) for e in errs[:6]]
+    if n_random:
+        print(f"random: {n_random - len(bad_seeds)}/{n_random} programs match the ISS" + (f" (failing seeds {bad_seeds[:10]})" if bad_seeds else ""))
+    print(f"total: {tot_ret} instructions retired in {tot_cyc} cycles (CPI {tot_cyc / max(tot_ret, 1):.2f}), {tot_st} load-use stalls, {tot_fl} flushes")
+    print("RISC-V cosim:", "ALL PASS" if not failures else f"{failures} FAILED")
+    sys.exit(1 if failures else 0)
+
+
+if __name__ == "__main__":
+    main()
