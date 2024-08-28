@@ -12,3 +12,11 @@ interface fifo_if #(parameter int WIDTH = 8, parameter int DEPTH = 16) (input lo
         input  full, empty, almost_full, almost_empty, count, rd_data;
     endclocking
 
+    clocking mon_cb @(posedge clk);
+        default input #1step;
+        input rst_n, wr_en, wr_data, rd_en, rd_data, full, empty, almost_full, almost_empty, count;
+    endclocking
+
+    modport DRV (clocking drv_cb, input clk, output rst_n);
+    modport MON (clocking mon_cb, input clk);
+endinterface
