@@ -76,3 +76,26 @@ package fifo_uvm_pkg;
         endtask
     endclass
 
+    typedef uvm_sequencer #(fifo_item) fifo_sequencer;
+
+    // ------------------------------------------------------------------ driver
+    class fifo_driver extends uvm_driver #(fifo_item);
+        `uvm_component_utils(fifo_driver)
+        virtual fifo_if vif;
+        function new(string name, uvm_component parent); super.new(name, parent); endfunction
+        function void build_phase(uvm_phase phase);
+            if (!uvm_config_db#(virtual fifo_if)::get(this, "", "vif", vif)) `uvm_fatal("NOVIF", "no virtual interface")
+        endfunction
+        task run_phase(uvm_phase phase);
+            vif.drv_cb.wr_en <= 0; vif.drv_cb.rd_en <= 0;
+            forever begin
+                seq_item_port.get_next_item(req);
+                @(vif.drv_cb);
+                vif.drv_cb.wr_en   <= req.wr_en;
+                vif.drv_cb.rd_en   <= req.rd_en;
+                vif.drv_cb.wr_data <= req.wr_data;
+                seq_item_port.item_done();
+            end
+        endtask
+    endclass
+
