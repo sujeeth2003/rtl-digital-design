@@ -156,3 +156,35 @@ package fifo_uvm_pkg;
             end
         endfunction
 
+        function void report_phase(uvm_phase phase);
+            `uvm_info("SB", $sformatf("writes=%0d reads=%0d errors=%0d", writes, reads, errors), UVM_LOW)
+            if (errors) `uvm_error("SB", "TEST FAILED") else `uvm_info("SB", "TEST PASSED", UVM_LOW)
+        endfunction
+    endclass
+
+    // ------------------------------------------------------------------ functional coverage
+    class fifo_coverage extends uvm_subscriber #(fifo_item);
+        `uvm_component_utils(fifo_coverage)
+        fifo_item it;
+        covergroup cg;
+            option.per_instance = 1;
+            cp_op:     coverpoint {it.wr_en, it.rd_en} { bins idle = {2'b00}; bins rd = {2'b01}; bins wr = {2'b10}; bins both = {2'b11}; }
+            cp_state:  coverpoint {it.full, it.empty, it.almost_full, it.almost_empty} {
+                bins empty_state   = {4'b0110, 4'b0111};    // empty (implies almost_empty)
+                bins almost_empty  = {4'b0001};
+                bins mid           = {4'b0000};
+                bins almost_full   = {4'b0010};
+                bins full_state    = {4'b1010, 4'b1011};
+            }
+            cp_count:  coverpoint it.count { bins zero = {0}; bins low = {[1:4]}; bins mid = {[5:11]}; bins high = {[12:15]}; bins full = {16}; }
+            x_op_state: cross cp_op, cp_state {
+                // reading an empty FIFO / writing a full FIFO are legal requests that must be ignored
+                ignore_bins none = binsof(cp_state.full_state) && binsof(cp_op.idle);
+            }
+        endgroup
+        function new(string name, uvm_component parent); super.new(name, parent); cg = new(); endfunction
+        function void write(fifo_item t); it = t; cg.sample(); endfunction
+        function void report_phase(uvm_phase phase);
+            `uvm_info("COV", $sformatf("functional coverage = %0.1f%%", cg.get_inst_coverage()), UVM_LOW)
+        endfunction
+    endclass
