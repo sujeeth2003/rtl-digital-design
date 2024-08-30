@@ -99,3 +99,31 @@ package fifo_uvm_pkg;
         endtask
     endclass
 
+    // ------------------------------------------------------------------ monitor
+    // Emits one item per cycle with the DUT's pre-edge view (flags, head data) and the
+    // request that was presented, so the scoreboard can decide what was accepted.
+    class fifo_monitor extends uvm_monitor;
+        `uvm_component_utils(fifo_monitor)
+        virtual fifo_if vif;
+        uvm_analysis_port #(fifo_item) ap;
+        function new(string name, uvm_component parent); super.new(name, parent); endfunction
+        function void build_phase(uvm_phase phase);
+            ap = new("ap", this);
+            if (!uvm_config_db#(virtual fifo_if)::get(this, "", "vif", vif)) `uvm_fatal("NOVIF", "no virtual interface")
+        endfunction
+        task run_phase(uvm_phase phase);
+            forever begin
+                @(vif.mon_cb);
+                if (vif.mon_cb.rst_n) begin
+                    fifo_item it = fifo_item::type_id::create("mon_it");
+                    it.wr_en = vif.mon_cb.wr_en;   it.rd_en = vif.mon_cb.rd_en;   it.wr_data = vif.mon_cb.wr_data;
+                    it.rd_data = vif.mon_cb.rd_data;
+                    it.full = vif.mon_cb.full;     it.empty = vif.mon_cb.empty;
+                    it.almost_full = vif.mon_cb.almost_full; it.almost_empty = vif.mon_cb.almost_empty;
+                    it.count = vif.mon_cb.count;
+                    ap.write(it);
+                end
+            end
+        endtask
+    endclass
+
