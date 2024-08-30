@@ -127,3 +127,32 @@ package fifo_uvm_pkg;
         endtask
     endclass
 
+    // ------------------------------------------------------------------ scoreboard
+    class fifo_scoreboard extends uvm_scoreboard;
+        `uvm_component_utils(fifo_scoreboard)
+        uvm_analysis_imp #(fifo_item, fifo_scoreboard) imp;
+        bit [WIDTH-1:0] model[$];
+        int unsigned writes, reads, errors;
+        function new(string name, uvm_component parent); super.new(name, parent); endfunction
+        function void build_phase(uvm_phase phase); imp = new("imp", this); endfunction
+
+        function void write(fifo_item it);
+            // 1. flags and count must match the reference queue BEFORE this cycle's operation
+            if (it.count !== model.size())              begin errors++; `uvm_error("SB", $sformatf("count %0d vs model %0d", it.count, model.size())) end
+            if (it.full  !== (model.size() == DEPTH))   begin errors++; `uvm_error("SB", "full flag mismatch") end
+            if (it.empty !== (model.size() == 0))       begin errors++; `uvm_error("SB", "empty flag mismatch") end
+            if (it.almost_full  !== (model.size() >= DEPTH - 2)) begin errors++; `uvm_error("SB", "almost_full mismatch") end
+            if (it.almost_empty !== (model.size() <= 2))         begin errors++; `uvm_error("SB", "almost_empty mismatch") end
+            // 2. head data (first-word fall-through) must be the oldest entry
+            if (model.size() > 0 && it.rd_data !== model[0]) begin
+                errors++; `uvm_error("SB", $sformatf("head data %0h vs model %0h", it.rd_data, model[0]))
+            end
+            // 3. apply accepted operations (read and write in the same cycle are both accepted unless full/empty)
+            begin
+                bit do_rd = it.rd_en && model.size() > 0;
+                bit do_wr = it.wr_en && model.size() < DEPTH;
+                if (do_rd) begin void'(model.pop_front()); reads++; end
+                if (do_wr) begin model.push_back(it.wr_data); writes++; end
+            end
+        endfunction
+
