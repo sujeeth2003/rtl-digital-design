@@ -12,3 +12,19 @@ package fifo_uvm_pkg;
     localparam int WIDTH = 8;
     localparam int DEPTH = 16;
 
+    // ------------------------------------------------------------------ transaction
+    class fifo_item extends uvm_sequence_item;
+        rand bit             wr_en, rd_en;
+        rand bit [WIDTH-1:0] wr_data;
+        // observed by the monitor
+        bit [WIDTH-1:0] rd_data;
+        bit full, empty, almost_full, almost_empty;
+        bit [$clog2(DEPTH):0] count;
+
+        `uvm_object_utils_begin(fifo_item)
+            `uvm_field_int(wr_en,   UVM_ALL_ON)
+            `uvm_field_int(rd_en,   UVM_ALL_ON)
+            `uvm_field_int(wr_data, UVM_ALL_ON)
+            `uvm_field_int(rd_data, UVM_ALL_ON)
+        `uvm_object_utils_end
+
