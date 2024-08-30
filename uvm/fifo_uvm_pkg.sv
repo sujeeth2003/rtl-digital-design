@@ -50,3 +50,29 @@ package fifo_uvm_pkg;
         endtask
     endclass
 
+    class fifo_fill_seq extends uvm_sequence #(fifo_item);       // write DEPTH+4 times: hits full and overflow attempts
+        `uvm_object_utils(fifo_fill_seq)
+        function new(string name = "fifo_fill_seq"); super.new(name); endfunction
+        task body();
+            repeat (DEPTH + 4) begin
+                fifo_item it = fifo_item::type_id::create("it");
+                start_item(it);
+                if (!it.randomize() with { wr_en == 1; rd_en == 0; }) `uvm_fatal("RAND", "randomize failed")
+                finish_item(it);
+            end
+        endtask
+    endclass
+
+    class fifo_drain_seq extends uvm_sequence #(fifo_item);      // read DEPTH+4 times: hits empty and underflow attempts
+        `uvm_object_utils(fifo_drain_seq)
+        function new(string name = "fifo_drain_seq"); super.new(name); endfunction
+        task body();
+            repeat (DEPTH + 4) begin
+                fifo_item it = fifo_item::type_id::create("it");
+                start_item(it);
+                if (!it.randomize() with { wr_en == 0; rd_en == 1; }) `uvm_fatal("RAND", "randomize failed")
+                finish_item(it);
+            end
+        endtask
+    endclass
+
