@@ -28,3 +28,25 @@ package fifo_uvm_pkg;
             `uvm_field_int(rd_data, UVM_ALL_ON)
         `uvm_object_utils_end
 
+        function new(string name = "fifo_item"); super.new(name); endfunction
+    endclass
+
+    // ------------------------------------------------------------------ sequences
+    class fifo_random_seq extends uvm_sequence #(fifo_item);
+        `uvm_object_utils(fifo_random_seq)
+        rand int unsigned n = 2000;
+        int unsigned wr_weight = 50, rd_weight = 50;       // percent, tunable per test
+        function new(string name = "fifo_random_seq"); super.new(name); endfunction
+        task body();
+            repeat (n) begin
+                fifo_item it = fifo_item::type_id::create("it");
+                start_item(it);
+                if (!it.randomize() with {
+                        wr_en dist {1 := wr_weight, 0 := 100 - wr_weight};
+                        rd_en dist {1 := rd_weight, 0 := 100 - rd_weight}; })
+                    `uvm_fatal("RAND", "randomize failed")
+                finish_item(it);
+            end
+        endtask
+    endclass
+
