@@ -221,3 +221,25 @@ package fifo_uvm_pkg;
         endfunction
     endclass
 
+    class fifo_base_test extends uvm_test;
+        `uvm_component_utils(fifo_base_test)
+        fifo_env env;
+        function new(string name, uvm_component parent); super.new(name, parent); endfunction
+        function void build_phase(uvm_phase phase); env = fifo_env::type_id::create("env", this); endfunction
+        task run_phase(uvm_phase phase);
+            fifo_random_seq rnd; fifo_fill_seq fill; fifo_drain_seq drain;
+            phase.raise_objection(this);
+            fill  = fifo_fill_seq::type_id::create("fill");   fill.start(env.agent.seqr);      // hit full
+            drain = fifo_drain_seq::type_id::create("drain"); drain.start(env.agent.seqr);     // hit empty
+            foreach (int w[4]) begin                                                             // balanced, write-heavy, read-heavy, bursty
+                rnd = fifo_random_seq::type_id::create("rnd");
+                rnd.wr_weight = (w == 1) ? 85 : (w == 2) ? 20 : 50;
+                rnd.rd_weight = (w == 1) ? 20 : (w == 2) ? 85 : 50;
+                rnd.n = 1000;
+                rnd.start(env.agent.seqr);
+            end
+            repeat (5) @(env.agent.drv.vif.drv_cb);
+            phase.drop_objection(this);
+        endtask
+    endclass
+endpackage
