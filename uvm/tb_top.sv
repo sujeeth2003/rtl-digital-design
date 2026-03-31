@@ -19,3 +19,14 @@ module tb_top;
         .full(vif.full), .empty(vif.empty), .almost_full(vif.almost_full), .almost_empty(vif.almost_empty),
         .count(vif.count));
 
+    initial begin
+        vif.rst_n = 0;
+        repeat (3) @(posedge clk);
+        vif.rst_n = 1;
+    end
+
+    initial begin
+        uvm_config_db#(virtual fifo_if)::set(null, "*", "vif", vif);
+        run_test();
+    end
+endmodule
