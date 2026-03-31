@@ -44,3 +44,11 @@ python tools/netsim_selftest.py
 ```
 `tools/rtl.py sim` runs Yosys -> CXXRTL C++ -> compiles `tb/*.cpp` with your C++ compiler -> runs it. `SBY`/`YOSYS`/`CXX` environment variables override tool locations (e.g. `CXX="python -m ziglang c++"`).
 
+### Honest notes on tooling and coverage
+- **Two simulation backends.** CXXRTL testbenches (`tb/`) were run for tier0, alu, fifo, async_fifo and axil. For the RISC-V core the CXXRTL harness (`tb/riscv_tb.cpp`) compiles, but on the development machine Windows Application Control refused to launch the freshly built executable, so the RISC-V results above come from `tools/netsim.py`, a small pure-Python simulator that executes Yosys's word-level JSON netlist. It was validated first against the ALU (3,000 random ops) and FIFO (20,000 random cycles), both of which also passed under CXXRTL. It is slow (~1-2k cycles/s) but complete for this design. On a normal machine `riscv_cosim.py` uses the CXXRTL executable automatically.
+- **Zero-delay simulation only.** Neither backend models metastability or gate delays, so the CDC blocks are checked for *logic* correctness (Gray coding, pointer comparison, no overflow/underflow), not for MTBF. The CDC structure follows Cummings' Gray-pointer async FIFO.
+- **UVM environment (`uvm/`) is written but has not been run.** No UVM-capable simulator (Questa, VCS, Xcelium, Verilator+UVM) was available. It contains driver, monitor, sequencer, scoreboard, agent, env, functional coverage and directed + random tests for the sync FIFO, but **no regression or coverage numbers are claimed**. The same FIFO is verified by the CXXRTL testbench and the formal proof above.
+- **Concurrent SVA (`axil_sva.sv`) has not been run**; open-source Yosys cannot parse it. The same rules are proven with immediate assertions inside `axil_regs.sv`.
+- Yosys' front end does not accept typedef'd/enum/struct *ports*, so the ALU's `op` and `flags` ports are plain `logic [3:0]`, with the enum (`alu_pkg::alu_op_t`) and struct (`alu_flags_t`) used inside.
+- Formal depth/scope: proofs are for small instances (4x4 FIFO, 8-bit ALU, 6x6 multiplier) because SMT solving cost grows fast; the structure is parameterized and the CXXRTL runs cover the full-size instances.
+
