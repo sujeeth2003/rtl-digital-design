@@ -17,3 +17,12 @@ Tiers 0-3 of a bottom-up RTL curriculum: gates and adders -> parameterized datap
 
 The core implements LUI AUIPC JAL JALR, all six branches, LB/LH/LW/LBU/LHU/SB/SH/SW, all OP-IMM and OP instructions, and EBREAK (halt). No CSRs, interrupts, FENCE, M/C extensions or misaligned-access traps.
 
+### RISC-V core numbers (from the cosim run)
+20,630 instructions retired in 26,528 cycles (**CPI 1.29**), 552 load-use stalls, 2,257 taken-branch/jump flushes over the 208 programs. Per program:
+
+| program | retired | cycles | CPI |
+|---|---|---|---|
+| alu / memory / hazards | 31 / 30 / 27 | 35 / 34 / 35 | 1.13 / 1.13 / 1.30 |
+| fib, branches, calls | 207 / 233 / 257 | 260 / 315 / 385 | 1.26 / 1.35 / 1.50 |
+| sort (16 elements), sieve (primes <= 100) | 1933 / 1525 | 2855 / 2289 | 1.48 / 1.50 |
+
