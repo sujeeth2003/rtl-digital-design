@@ -32,3 +32,15 @@ The core implements LUI AUIPC JAL JALR, all six branches, LB/LH/LW/LBU/LHU/SB/SH
 - **Control**: branches/jumps resolve in EX, 2-cycle flush of the younger instructions
 - **EBREAK**: squashes everything younger, so the final state is exactly the state before the EBREAK
 
+## Run it
+```bash
+pip install yowasp-yosys z3-solver ziglang        # or install yosys + sby + a C++ compiler natively
+python tools/rtl.py list
+python tools/rtl.py sim tier0     # also: alu fifo async_fifo axil riscv
+python tools/rtl.py formal alu    # also: tier0 fifo gray axil
+python tools/rtl.py all
+python tools/riscv_cosim.py --netsim --random 200      # RISC-V cosim without a native simulator
+python tools/netsim_selftest.py
+```
+`tools/rtl.py sim` runs Yosys -> CXXRTL C++ -> compiles `tb/*.cpp` with your C++ compiler -> runs it. `SBY`/`YOSYS`/`CXX` environment variables override tool locations (e.g. `CXX="python -m ziglang c++"`).
+
