@@ -28,3 +28,26 @@ module fpga_top #(
     logic        halted;
     logic [31:0] retired, stalls, flushes;
 
+    riscv_core u_core (.clk(clk_25mhz), .rst_n(rst_n),
+                       .imem_addr(imem_addr), .imem_rdata(imem_rdata),
+                       .dmem_addr(dmem_addr), .dmem_wdata(dmem_wdata), .dmem_we(dmem_we), .dmem_funct3(dmem_funct3),
+                       .dmem_rdata(dmem_rdata), .dbg_reg_addr(5'd0), .dbg_reg_data(),
+                       .halted(halted), .retired(retired), .stalls(stalls), .flushes(flushes));
+
+    // ---- instruction RAM, initialised with the firmware ---------------------------------------------------
+    logic [31:0] imem [0:(1 << IAW) - 1];
+    initial $readmemh(`FW_HEX, imem);
+    assign imem_rdata = imem[imem_addr[IAW+1:2]];
+
+    // ---- data RAM + LED register (address bit 12 selects the peripheral) ------------------------------------
+    wire is_mmio = dmem_addr[12];
+    logic [7:0] led_reg = 8'h00;
+    dmem #(.AW(DAW)) u_dmem (.clk(clk_25mhz), .addr(dmem_addr), .wdata(dmem_wdata), .we(dmem_we && !is_mmio), .funct3(dmem_funct3),
+                             .rdata(dmem_rdata_ram), .init_we(1'b0), .init_addr(10'd0), .init_data(32'd0), .dbg_addr(10'd0), .dbg_data());
+    always_ff @(posedge clk_25mhz)
+        if (!rst_n) led_reg <= 8'h00;
+        else if (dmem_we && is_mmio) led_reg <= dmem_wdata[7:0];
+    assign dmem_rdata = is_mmio ? {24'd0, led_reg} : dmem_rdata_ram;
+
+    assign led = halted ? 8'hFF : led_reg;
+endmodule
