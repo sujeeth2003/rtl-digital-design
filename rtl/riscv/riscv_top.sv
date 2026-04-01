@@ -45,8 +45,8 @@ module dmem #(
     input  logic [9:0]  dbg_addr,
     output logic [31:0] dbg_data
 );
-    logic [31:0] mem [0:1023];
-    wire [9:0] idx = addr[11:2];
+    logic [31:0] mem [0:(1<<AW)-1];
+    wire [AW-1:0] idx = addr[AW+1:2];
     wire [1:0] off = addr[1:0];
     wire [31:0] word = mem[idx];
     assign dbg_data = mem[dbg_addr];
