@@ -76,7 +76,7 @@ module dmem #(
     end
 
     always_ff @(posedge clk) begin
-        if (init_we)  mem[init_addr] <= init_data;
+        if (init_we)  mem[init_addr[AW-1:0]] <= init_data;
         else if (we)  mem[idx] <= wword;
     end
 endmodule
