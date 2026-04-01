@@ -49,7 +49,7 @@ module dmem #(
     wire [AW-1:0] idx = addr[AW+1:2];
     wire [1:0] off = addr[1:0];
     wire [31:0] word = mem[idx];
-    assign dbg_data = mem[dbg_addr];
+    assign dbg_data = mem[dbg_addr[AW-1:0]];
 
     logic [7:0]  b;
     logic [15:0] h;
