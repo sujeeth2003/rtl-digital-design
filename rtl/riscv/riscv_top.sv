@@ -33,7 +33,9 @@ endmodule
 
 // 4 KiB data RAM: asynchronous read with byte/half/word sign- or zero-extension,
 // synchronous write with byte enables. Little-endian. Addresses wrap at 4 KiB.
-module dmem (
+module dmem #(
+    parameter int AW = 10                 // address bits of the word index: 2**AW words
+) (
     input  logic        clk,
     input  logic [31:0] addr, wdata,
     input  logic        we,
