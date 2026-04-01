@@ -52,3 +52,13 @@ python tools/netsim_selftest.py
 - Yosys' front end does not accept typedef'd/enum/struct *ports*, so the ALU's `op` and `flags` ports are plain `logic [3:0]`, with the enum (`alu_pkg::alu_op_t`) and struct (`alu_flags_t`) used inside.
 - Formal depth/scope: proofs are for small instances (4x4 FIFO, 8-bit ALU, 6x6 multiplier) because SMT solving cost grows fast; the structure is parameterized and the CXXRTL runs cover the full-size instances.
 
+## Layout
+```
+rtl/tier0 rtl/alu rtl/fifo rtl/cdc rtl/axi_lite rtl/riscv   synthesizable SystemVerilog
+tb/                CXXRTL C++ testbenches
+formal/            SymbiYosys jobs (.sby) and formal harnesses
+programs/          RISC-V assembly test programs
+tools/             rtl.py driver, RISC-V assembler + ISS + random generator + cosim, netsim.py
+uvm/               UVM environment for the FIFO (unrun)
+```
+Related: [verilog-compiler](../verilog-compiler) is a from-scratch Verilog-subset compiler in C++ (lexer, parser, AST, netlist).
