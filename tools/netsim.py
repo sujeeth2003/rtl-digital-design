@@ -42,7 +42,9 @@ def build_json(files, top, params=None):
 def _pint(v):
     if isinstance(v, int):
         return v
-    return int(v, 2) if v and set(v) <= {"0", "1"} else 0
+    if v and set(v) <= set("01xXzZ"):                # undefined bits (uninitialised memory words) read as 0
+        return int(v.replace("x", "0").replace("X", "0").replace("z", "0").replace("Z", "0"), 2)
+    return 0
 
 
 class Netlist:
