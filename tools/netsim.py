@@ -63,7 +63,7 @@ class Netlist:
         self.v = [0] * (nmax + 2)
         self.v[self.C1] = 1
         self.ports = {n: p for n, p in mod["ports"].items()}
-        self.names = {n: w["bits"] for n, w in mod["netnames"].items()}
+        self.names = {n: [self._b(b) for b in w["bits"]] for n, w in mod["netnames"].items()}
         self.cells = []
         self.ffs, self.mems, comb = [], [], []
         for name, c in mod["cells"].items():
