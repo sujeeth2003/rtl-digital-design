@@ -69,7 +69,7 @@ class Netlist:
         for name, c in mod["cells"].items():
             t = c["type"]
             if t in ("$scopeinfo", "$print", "$check", "$assert", "$assume", "$cover"): continue   # no simulation effect
-            par = {k: _pint(x) for k, x in c["parameters"].items() if not isinstance(x, str) or set(x) <= {"0", "1"}}
+            par = {k: _pint(x) for k, x in c["parameters"].items() if not isinstance(x, str) or set(x) <= set("01xXzZ")}
             con = {k: [self._b(b) for b in bits] for k, bits in c["connections"].items()}
             d = c["port_directions"]
             cell = (t, par, con, d, name)
