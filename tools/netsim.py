@@ -85,7 +85,10 @@ class Netlist:
         """Zero every net, flop and memory (power-on state)."""
         self.v = [0] * len(self.v)
         self.v[self.C1] = 1
-        self.mem_data = {name: [0] * par["SIZE"] for (_, par, _, _, name) in self.mems}
+        self.mem_data = {}
+        for (_, par, _, _, name) in self.mems:        # power-on contents = the memory's INIT value ($readmemh / initial blocks)
+            n, w, init = par["SIZE"], par["WIDTH"], par.get("INIT", 0)
+            self.mem_data[name] = [(init >> (i * w)) & ((1 << w) - 1) for i in range(n)]
 
     def memory(self, contains):
         """Contents of the memory whose MEMID contains the given text (e.g. 'dmem')."""
