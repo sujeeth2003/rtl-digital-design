@@ -1,0 +1,25 @@
+# Pin constraints for the Radiona ULX3S (Lattice ECP5 LFE5U-25F, CABGA381 package).
+# !! Written from memory of the public ULX3S pinout: CHECK EVERY BALL AGAINST THE BOARD SCHEMATIC before programming a board.
+# (A wrong pin assignment can drive a pin against another driver. I have not tried this on hardware.)
+LOCATE COMP "clk_25mhz" SITE "G2";
+IOBUF PORT "clk_25mhz" IO_TYPE=LVCMOS33;
+
+LOCATE COMP "btn_rst_n" SITE "D6";           # PWR button (active low)
+IOBUF PORT "btn_rst_n" IO_TYPE=LVCMOS33 PULLMODE=UP;
+
+LOCATE COMP "led[0]" SITE "B2";
+LOCATE COMP "led[1]" SITE "C2";
+LOCATE COMP "led[2]" SITE "C1";
+LOCATE COMP "led[3]" SITE "D2";
+LOCATE COMP "led[4]" SITE "D1";
+LOCATE COMP "led[5]" SITE "E2";
+LOCATE COMP "led[6]" SITE "E1";
+LOCATE COMP "led[7]" SITE "H3";
+IOBUF PORT "led[0]" IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[1]" IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[2]" IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[3]" IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[4]" IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[5]" IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[6]" IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[7]" IO_TYPE=LVCMOS33 DRIVE=4;
