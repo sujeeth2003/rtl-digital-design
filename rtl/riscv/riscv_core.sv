@@ -116,6 +116,8 @@ module riscv_core (
     logic [3:0]  alu_flags_unused;
     alu #(.WIDTH(32)) u_alu (.a(alu_a), .b(alu_b), .op(idex_alu_op), .result(alu_result), .flags(alu_flags_unused));
 
+    // One subtraction gives both orderings: a <u b is the borrow; a <s b differs from it only when the signs differ.
+    wire [32:0] cmp_diff = {1'b0, a_fwd} - {1'b0, b_fwd};
     wire eq  = (a_fwd == b_fwd);
     wire lt  = ($signed(a_fwd) < $signed(b_fwd));
     wire ltu = (a_fwd < b_fwd);
