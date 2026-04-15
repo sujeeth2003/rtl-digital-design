@@ -119,8 +119,8 @@ module riscv_core (
     // One subtraction gives both orderings: a <u b is the borrow; a <s b differs from it only when the signs differ.
     wire [32:0] cmp_diff = {1'b0, a_fwd} - {1'b0, b_fwd};
     wire eq  = (a_fwd == b_fwd);
-    wire lt  = ($signed(a_fwd) < $signed(b_fwd));
-    wire ltu = (a_fwd < b_fwd);
+    wire ltu = cmp_diff[32];
+    wire lt  = (a_fwd[31] == b_fwd[31]) ? ltu : a_fwd[31];
     logic br_cond;
     always_comb begin
         case (idex_funct3)
