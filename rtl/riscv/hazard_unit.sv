@@ -1,6 +1,7 @@
 // Hazard handling for the 5-stage pipeline (IF ID EX MEM WB).
 //
-//  1. Data hazards, forwarding into EX:
+//  1. Data hazards, forwarding into EX. (In the current core these two selects are precomputed one stage earlier, in ID,
+//     and registered for timing; the fwd_a/fwd_b outputs below are the reference formulation and are not used by riscv_core.)
 //       fwd = 2'b01 : take the value from the instruction now in MEM (EX/MEM result)
 //       fwd = 2'b10 : take the value from the instruction now in WB  (MEM/WB result)
 //       fwd = 2'b00 : use the register-file value read in ID
