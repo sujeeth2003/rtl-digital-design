@@ -24,3 +24,11 @@ def tool(*names):
     sys.exit(f"missing tool, install one of {names}")
 
 
+def run(cmd, log):
+    p = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
+    (B / log).write_text(p.stdout + p.stderr)
+    if p.returncode:
+        print((p.stdout + p.stderr)[-1500:]); sys.exit(f"{cmd[0]} failed (see tier4/build/{log})")
+    return p.stdout + p.stderr
+
+
