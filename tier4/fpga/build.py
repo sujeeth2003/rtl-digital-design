@@ -13,3 +13,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[2]
+B = ROOT / "tier4" / "build"
+
+
+def tool(*names):
+    for n in names:
+        p = shutil.which(n)
+        if p: return [p]
+    sys.exit(f"missing tool, install one of {names}")
+
+
