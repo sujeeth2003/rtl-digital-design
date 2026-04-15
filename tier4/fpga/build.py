@@ -48,3 +48,29 @@ def main():
     (B / "blink.hex").write_text("\n".join(f"{w:08x}" for w in words) + "\n")
     print(f"firmware: {len(words)} words")
 
+    yosys, nextpnr, ecppack = tool("yowasp-yosys", "yosys"), tool("yowasp-nextpnr-ecp5", "nextpnr-ecp5"), tool("yowasp-ecppack", "ecppack")
+    srcs = ["rtl/alu/alu.sv"] + [f"rtl/riscv/{f}.sv" for f in ("riscv_core", "regfile", "decode", "hazard_unit", "riscv_top")] + ["tier4/fpga/fpga_top.sv"]
+    out = run(yosys + ["-p", f"read_verilog -sv {' '.join(srcs)}; synth_ecp5 {'' if a.bram else '-nobram '}-top fpga_top -json tier4/build/soc.json"], "yosys.log")
+    stat = {k: int(v) for k, v in re.findall(r"^\s+(\S+)\s+(\d+)\s*$", out.split("Number of cells")[-1] if "Number of cells" in out else out, re.M)}
+    print("yosys resources:", {k: v for k, v in stat.items() if k in ("LUT4", "TRELLIS_FF", "TRELLIS_DPR16X4", "DP16KD", "CCU2C", "MULT18X18D")})
+
+    cmd = nextpnr + ["--25k", "--package", "CABGA381", "--json", "tier4/build/soc.json", "--lpf", "tier4/fpga/ulx3s.lpf",
+                     "--freq", str(a.freq), "--seed", str(a.seed), "--timing-allow-fail", "--textcfg", "tier4/build/soc.config"]
+    log = run(cmd, "nextpnr.log")
+    fm = re.findall(r"Max frequency for clock\s+'([^']+)':\s+([\d.]+) MHz \((PASS|FAIL) at ([\d.]+) MHz\)", log)
+    util = re.findall(r"^Info:\s+(TRELLIS_COMB|TRELLIS_FF|DP16KD|TRELLIS_IO|MULT18X18D|TRELLIS_RAMW):\s+(\d+)/\s*(\d+)\s+(\d+)%", log, re.M)
+    for name, used, total, pct in util: print(f"  {name:<14}{used:>6} / {total:<6} ({pct}%)")
+    last = fm[-1] if fm else None
+    if last:
+        print(f"target {a.freq:g} MHz -> achieved Fmax {last[1]} MHz: {last[2]}")
+    crit = re.findall(r"Critical path report for clock '[^']+' \(posedge -> posedge\):(.*?)(?=\nInfo: Max delay|\Z)", log, re.S)
+    if crit:
+        lines = [l for l in crit[-1].splitlines() if "Source" in l or "Sink" in l or "Net " in l]
+        (B / "critical_path.txt").write_text("\n".join(crit[-1].splitlines()[:60]))
+    if not a.no_bitstream:
+        run(ecppack + ["--compress", "tier4/build/soc.config", "--bit", "tier4/build/soc.bit"], "ecppack.log")
+        print(f"bitstream: tier4/build/soc.bit ({(B / 'soc.bit').stat().st_size} bytes)")
+
+
+if __name__ == "__main__":
+    main()
