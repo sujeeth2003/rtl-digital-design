@@ -78,6 +78,10 @@ module riscv_core (
     // Only the CONTROL bits are cleared on a flush/stall. This matters for timing: `flush` is the latest signal in the design
     // (forwarding -> compare -> branch decision), and resetting ~130 flops from it created a huge fanout on the critical path.
     always_ff @(posedge clk) begin
+        idex_alu_src_imm <= c_alu_src_imm; idex_alu_a_pc <= c_alu_a_pc; idex_alu_op <= c_alu_op;
+        idex_funct3 <= ifid_instr[14:12];
+        idex_rs1 <= c_uses_rs1 ? id_rs1 : 5'd0; idex_rs2 <= c_uses_rs2 ? id_rs2 : 5'd0; idex_rd <= id_rd;
+        idex_pc <= ifid_pc; idex_rs1_val <= id_rs1_val; idex_rs2_val <= id_rs2_val; idex_imm <= id_imm;
         if (id_bubble) begin
             idex_valid <= 1'b0; idex_reg_write <= 1'b0; idex_mem_read <= 1'b0; idex_mem_write <= 1'b0;
             idex_is_branch <= 1'b0; idex_is_jal <= 1'b0; idex_is_jalr <= 1'b0; idex_is_ebreak <= 1'b0;
