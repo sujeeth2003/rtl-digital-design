@@ -74,6 +74,9 @@ module riscv_core (
     logic [31:0] idex_pc, idex_rs1_val, idex_rs2_val, idex_imm;
 
     wire id_bubble = !rst_n || flush || stall || !ifid_valid;
+    // Datapath registers are loaded every cycle and never reset: when idex_valid is 0 (a bubble) nothing downstream may use them.
+    // Only the CONTROL bits are cleared on a flush/stall. This matters for timing: `flush` is the latest signal in the design
+    // (forwarding -> compare -> branch decision), and resetting ~130 flops from it created a huge fanout on the critical path.
     always_ff @(posedge clk) begin
         if (id_bubble) begin
             idex_valid <= 1'b0; idex_reg_write <= 1'b0; idex_mem_read <= 1'b0; idex_mem_write <= 1'b0;
