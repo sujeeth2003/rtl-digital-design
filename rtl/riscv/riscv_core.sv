@@ -72,6 +72,18 @@ module riscv_core (
     logic [2:0]  idex_funct3;
     logic [4:0]  idex_rs1, idex_rs2, idex_rd;
     logic [31:0] idex_pc, idex_rs1_val, idex_rs2_val, idex_imm;
+    logic        idex_fa_mem, idex_fa_wb, idex_fb_mem, idex_fb_wb;      // forwarding selects, precomputed in ID (see below)
+    logic        exmem_valid, exmem_reg_write;
+    logic [4:0]  exmem_rd;
+
+    // Forwarding selects are decided one stage EARLY, in ID, and registered. An instruction now in ID reaches EX next cycle; by
+    // then the producer that is in EX today will be in MEM, and the producer in MEM today will be in WB. Comparing register numbers
+    // here instead of in EX takes the 5-bit compares and the select decode off the critical EX path (forward -> compare -> branch).
+    // MEM has priority over WB (younger producer). A producer already in WB is covered by the register file's write-first bypass.
+    wire fa_mem_n = idex_valid && idex_reg_write && idex_rd != 5'd0 && c_uses_rs1 && idex_rd == id_rs1;
+    wire fa_wb_n  = exmem_valid && exmem_reg_write && exmem_rd != 5'd0 && c_uses_rs1 && exmem_rd == id_rs1;
+    wire fb_mem_n = idex_valid && idex_reg_write && idex_rd != 5'd0 && c_uses_rs2 && idex_rd == id_rs2;
+    wire fb_wb_n  = exmem_valid && exmem_reg_write && exmem_rd != 5'd0 && c_uses_rs2 && exmem_rd == id_rs2;
 
     wire id_bubble = !rst_n || flush || stall || !ifid_valid;
     // Datapath registers are loaded every cycle and never reset: when idex_valid is 0 (a bubble) nothing downstream may use them.
