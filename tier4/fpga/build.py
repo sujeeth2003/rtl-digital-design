@@ -32,3 +32,19 @@ def run(cmd, log):
     return p.stdout + p.stderr
 
 
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--freq", type=float, default=25.0, help="target clock in MHz")
+    ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--fw", default="tier4/fw/blink.s")
+    ap.add_argument("--no-bitstream", action="store_true")
+    ap.add_argument("--bram", action="store_true", help="let Yosys use block RAM (default: LUT RAM: its ~5.6 ns clk-to-q is too slow on the fetch path)")
+    a = ap.parse_args()
+    B.mkdir(parents=True, exist_ok=True)
+
+    sys.path.insert(0, str(ROOT / "tools"))
+    import riscv_asm
+    words, _ = riscv_asm.assemble((ROOT / a.fw).read_text())
+    (B / "blink.hex").write_text("\n".join(f"{w:08x}" for w in words) + "\n")
+    print(f"firmware: {len(words)} words")
+
