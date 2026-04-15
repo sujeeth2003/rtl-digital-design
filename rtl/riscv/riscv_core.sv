@@ -94,6 +94,7 @@ module riscv_core (
         idex_funct3 <= ifid_instr[14:12];
         idex_rs1 <= c_uses_rs1 ? id_rs1 : 5'd0; idex_rs2 <= c_uses_rs2 ? id_rs2 : 5'd0; idex_rd <= id_rd;
         idex_pc <= ifid_pc; idex_rs1_val <= id_rs1_val; idex_rs2_val <= id_rs2_val; idex_imm <= id_imm;
+        idex_fa_mem <= fa_mem_n; idex_fa_wb <= fa_wb_n; idex_fb_mem <= fb_mem_n; idex_fb_wb <= fb_wb_n;
         if (id_bubble) begin
             idex_valid <= 1'b0; idex_reg_write <= 1'b0; idex_mem_read <= 1'b0; idex_mem_write <= 1'b0;
             idex_is_branch <= 1'b0; idex_is_jal <= 1'b0; idex_is_jalr <= 1'b0; idex_is_ebreak <= 1'b0;
