@@ -106,8 +106,7 @@ module riscv_core (
 
     // -------------------------------------------------------------- EX
     logic [1:0]  fwd_a, fwd_b;
-    logic        exmem_valid, exmem_reg_write, exmem_mem_read, exmem_mem_write, exmem_is_ebreak;
-    logic [4:0]  exmem_rd;
+    logic        exmem_mem_read, exmem_mem_write, exmem_is_ebreak;
     logic [2:0]  exmem_funct3;
     logic [31:0] exmem_result, exmem_store_data;
     logic        memwb_valid, memwb_reg_write;
