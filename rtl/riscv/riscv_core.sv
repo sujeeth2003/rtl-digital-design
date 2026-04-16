@@ -120,8 +120,8 @@ module riscv_core (
                        .ex_mem_read(idex_mem_read), .ex_valid(idex_valid), .ex_rd(idex_rd),
                        .stall(stall), .ex_taken(ex_taken), .flush(flush));
 
-    wire [31:0] a_fwd = (fwd_a == 2'b01) ? exmem_result : (fwd_a == 2'b10) ? memwb_data : idex_rs1_val;
-    wire [31:0] b_fwd = (fwd_b == 2'b01) ? exmem_result : (fwd_b == 2'b10) ? memwb_data : idex_rs2_val;
+    wire [31:0] a_fwd = idex_fa_mem ? exmem_result : idex_fa_wb ? memwb_data : idex_rs1_val;
+    wire [31:0] b_fwd = idex_fb_mem ? exmem_result : idex_fb_wb ? memwb_data : idex_rs2_val;
     wire [31:0] alu_a = idex_alu_a_pc ? idex_pc : a_fwd;
     wire [31:0] alu_b = idex_alu_src_imm ? idex_imm : b_fwd;
     logic [31:0] alu_result;
