@@ -14,3 +14,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[2]
+BUILD = ROOT / "tier4" / "build"
+YOSYS = [shutil.which("yowasp-yosys") or shutil.which("yosys")]
+
+GATES = "AND,NAND,OR,NOR,XOR,XNOR,ANDNOT,ORNOT,MUX"
+
+
