@@ -21,3 +21,10 @@ YOSYS = [shutil.which("yowasp-yosys") or shutil.which("yosys")]
 GATES = "AND,NAND,OR,NOR,XOR,XNOR,ANDNOT,ORNOT,MUX"
 
 
+def yosys(script, log):
+    p = subprocess.run(YOSYS + ["-p", script], cwd=ROOT, capture_output=True, text=True)
+    out = p.stdout + p.stderr
+    (BUILD / log).write_text(out)
+    return p.returncode, out
+
+
