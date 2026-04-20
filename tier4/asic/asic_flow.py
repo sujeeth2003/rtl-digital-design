@@ -28,3 +28,11 @@ def yosys(script, log):
     return p.returncode, out
 
 
+def stats(out):
+    cells = {}
+    block = out.split("Number of cells")[-1] if "Number of cells" in out else out.split("=== design hierarchy ===")[-1]
+    for n, name in re.findall(r"^\s+(\d+)\s+\$_(\w+)_\s*$", block, re.M):
+        cells[name] = int(n)
+    return cells
+
+
