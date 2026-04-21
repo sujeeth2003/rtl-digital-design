@@ -36,3 +36,21 @@ def stats(out):
     return cells
 
 
+def synth_and_check(name, top, files, params=""):
+    """Synthesise `top`; keep the RTL as 'gold' and the gate netlist as 'gate'; prove them equivalent."""
+    read = f"read_verilog -sv {' '.join(files)}; {params} hierarchy -top {top}; proc; flatten; opt_clean; "
+    script = (read + f"design -stash gold; " + read.replace("proc; flatten; opt_clean; ", "") +
+              f"synth -top {top} -flatten -noabc; techmap; abc -g {GATES}; opt_clean; tee -o tier4/build/{name}_stat.txt stat; "
+              f"write_verilog -noattr tier4/build/{name}_gates.v; design -stash gate; "
+              f"design -copy-from gold -as gold {top}; design -copy-from gate -as gate {top}; "
+              f"equiv_make gold gate eq; hierarchy -top eq; equiv_simple -seq 0; equiv_induct; tee -o tier4/build/{name}_equiv.txt equiv_status -assert")
+    rc, out = yosys(script, f"{name}_asic.log")
+    gate_stat = (BUILD / f"{name}_stat.txt").read_text() if (BUILD / f"{name}_stat.txt").exists() else ""
+    cells = stats(gate_stat)
+    eq = (BUILD / f"{name}_equiv.txt").read_text() if (BUILD / f"{name}_equiv.txt").exists() else ""
+    ok = rc == 0 and "Equivalence successfully proven" in eq
+    total = sum(cells.values())
+    print(f"{name:<14} gates={total:>5}  " + "  ".join(f"{k}:{v}" for k, v in sorted(cells.items(), key=lambda kv: -kv[1])[:6]) +
+          f"   equivalence RTL == gates: {'PROVEN' if ok else 'NOT PROVEN (see tier4/build/' + name + '_asic.log)'}")
+    return ok
+
