@@ -54,3 +54,17 @@ def synth_and_check(name, top, files, params=""):
           f"   equivalence RTL == gates: {'PROVEN' if ok else 'NOT PROVEN (see tier4/build/' + name + '_asic.log)'}")
     return ok
 
+
+def main():
+    BUILD.mkdir(parents=True, exist_ok=True)
+    ok = True
+    ok &= synth_and_check("alu16", "alu", ["rtl/alu/alu.sv"], "chparam -set WIDTH 16 alu;")
+    ok &= synth_and_check("alu32", "alu", ["rtl/alu/alu.sv"])
+    ok &= synth_and_check("cla16", "cla_adder", ["rtl/tier0/full_adder.sv", "rtl/tier0/ripple_adder.sv", "rtl/tier0/cla_adder.sv"], "chparam -set WIDTH 16 cla_adder;")
+    ok &= synth_and_check("barrel16", "barrel_shifter", ["rtl/tier0/combinational.sv"], "chparam -set WIDTH 16 barrel_shifter;")
+    ok &= synth_and_check("hazard", "hazard_unit", ["rtl/riscv/hazard_unit.sv"])
+    sys.exit(0 if ok else 1)
+
+
+if __name__ == "__main__":
+    main()
