@@ -1,0 +1,11 @@
+{
+  "_comment": "OpenLane 2 configuration for hardening the RISC-V core with the open SkyWater sky130 PDK. NOT RUN: OpenLane/OpenROAD and the PDK are not installable in the environment this repo was developed in. Treat as a starting point, expect to tune CLOCK_PERIOD and FP_CORE_UTIL. The core's memories are outside riscv_core, so it is a pure-logic block that hardens without a memory macro.",
+  "DESIGN_NAME": "riscv_core",
+  "VERILOG_FILES": ["dir::../../rtl/alu/alu.sv", "dir::../../rtl/riscv/riscv_core.sv", "dir::../../rtl/riscv/regfile.sv", "dir::../../rtl/riscv/decode.sv", "dir::../../rtl/riscv/hazard_unit.sv"],
+  "CLOCK_PORT": "clk",
+  "CLOCK_PERIOD": 20.0,
+  "FP_SIZING": "relative",
+  "FP_CORE_UTIL": 40,
+  "PL_TARGET_DENSITY_PCT": 50,
+  "RUN_LINTER": true
+}
