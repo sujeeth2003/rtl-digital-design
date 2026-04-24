@@ -34,3 +34,9 @@ How each fix was found: read the nextpnr critical-path report, fix the worst off
 2. Then the path started at the block RAM output.
 3. Then `memwb_rd == rs` compare -> select decode -> mux -> JALR target adder -> `pc`. After step 3 the worst path is the ALU itself (idex select -> forward mux -> ALU -> EX/MEM result), which is the natural limit of this pipeline.
 
+**After every change the full CPU regression was re-run**: the core still matches the golden ISS on all 8 directed + 200 random hazard-stress programs (see the main README). Random hazard programs are what catches a wrong early-forwarding condition.
+
+Resources at 25 MHz on the LFE5U-25F: about 3,255 LUT4-equivalents (13%), 358 flip-flops, 160 LUT-RAM write ports (5%), 10 I/O, 0 block RAMs. The bitstream builds (about 144 KB), and that is as far as I can take it without a board. (I do not commit the bitstream: it has never run and its pin map is unverified.)
+
+Not done: a PLL to actually clock the core at 75 MHz on the board (the design closes there, but the top level uses the raw 25 MHz oscillator); a UART for output; a block-RAM version of the fetch stage (needs a registered-output redesign of IF to keep the speed).
+
