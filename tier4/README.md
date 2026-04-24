@@ -19,3 +19,18 @@ python tier4/fpga/build.py                        # 25 MHz build + bitstream (th
 - **Firmware (`fw/blink.s`):** a binary counter on the 8 LEDs, one step about every 0.25 s. `fw/blink_sim.s` is the same with a tiny delay so a simulation can watch it.
 - **Simulation before hardware (`test_soc.py`):** LEDs count 1..8 in order (including a read-back through the MMIO path) and the core then halts with all LEDs on. Passes.
 
+### Timing closure: 56 MHz -> 77 MHz
+Baseline (25 MHz target passes easily; the interesting number is the maximum the design can reach):
+
+| Step | Change | Fmax |
+|---|---|---|
+| baseline | as verified in tiers 0-3 | **56.0 MHz** |
+| 1 | On a flush/stall, reset only the *control* bits of the ID/EX register (datapath values are ignored when `valid=0`); and get `<` / `<u` from **one** subtraction instead of three comparators | 61.6 MHz |
+| 2 | Instruction/data RAM in **LUT RAM instead of block RAM** (`-nobram`): a block RAM's ~5.6 ns clk-to-q sat on the fetch -> decode -> stall path | 66.6 MHz |
+| 3 | **Compute the forwarding selects one stage early (in ID) and register them**, instead of comparing register numbers in EX | **77.2 MHz** (timing **passes at a 75 MHz target**) |
+
+How each fix was found: read the nextpnr critical-path report, fix the worst offender, re-run.
+1. The baseline path was `forwarding mux -> 32-bit branch compare -> ex_taken -> flush -> reset of ~130 ID/EX flops` (17.9 ns, with 1.8 ns of routing on the flush net alone).
+2. Then the path started at the block RAM output.
+3. Then `memwb_rd == rs` compare -> select decode -> mux -> JALR target adder -> `pc`. After step 3 the worst path is the ALU itself (idex select -> forward mux -> ALU -> EX/MEM result), which is the natural limit of this pipeline.
+
