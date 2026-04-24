@@ -40,3 +40,18 @@ Resources at 25 MHz on the LFE5U-25F: about 3,255 LUT4-equivalents (13%), 358 fl
 
 Not done: a PLL to actually clock the core at 75 MHz on the board (the design closes there, but the top level uses the raw 25 MHz oscillator); a UART for output; a block-RAM version of the fetch stage (needs a registered-output redesign of IF to keep the speed).
 
+## ASIC front end: gate-level synthesis + equivalence proof (`asic/asic_flow.py`)
+```bash
+python tier4/asic/asic_flow.py
+```
+Synthesises to a generic gate library (AND, NAND, OR, NOR, XOR, XNOR, ANDNOT, ORNOT, MUX, NOT), reports gate counts, and then **formally proves the gate netlist equivalent to the RTL** (Yosys `equiv_make` / `equiv_simple` / `equiv_induct`). Synthesis must never change behaviour; this is the check that it did not.
+
+| Block | Gates | RTL == gates |
+|---|---|---|
+| 32-bit ALU | 1,268 | proven |
+| 16-bit ALU | 626 | proven |
+| 16-bit carry-lookahead adder | 88 | proven |
+| 16-bit barrel shifter | 243 | proven |
+| hazard unit | 94 | proven |
+
+Only combinational blocks are checked this way; the sequential core is verified by co-simulation instead. The gate counts are technology-independent (not standard-cell area).
