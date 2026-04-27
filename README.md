@@ -27,7 +27,7 @@ The core implements LUI AUIPC JAL JALR, all six branches, LB/LH/LW/LBU/LHU/SB/SH
 | sort (16 elements), sieve (primes <= 100) | 1933 / 1525 | 2855 / 2289 | 1.48 / 1.50 |
 
 ### Hazards handled (`rtl/riscv/hazard_unit.sv`)
-- **Forwarding** from MEM and WB into EX (MEM has priority), plus a register-file write-first bypass for the ID/WB overlap
+- **Forwarding** from MEM and WB into EX (MEM has priority), plus a register-file write-first bypass for the ID/WB overlap. The forwarding *selects* are computed one stage early, in ID, and registered (a timing optimisation, see tier 4)
 - **Load-use**: 1-cycle stall + bubble, then WB->EX forwarding
 - **Control**: branches/jumps resolve in EX, 2-cycle flush of the younger instructions
 - **EBREAK**: squashes everything younger, so the final state is exactly the state before the EBREAK
