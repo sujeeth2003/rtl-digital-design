@@ -2,7 +2,7 @@
 
 Tiers 0-4 of a bottom-up RTL curriculum: gates and adders -> parameterized datapath blocks -> FIFOs and clock-domain crossing -> a 5-stage pipelined RISC-V core, each verified with more than one method. Everything is written in synthesizable SystemVerilog that open-source **Yosys** parses, so the whole repo can be checked with `pip install` tools only.
 
-> **Not done: Tier 4** (FPGA board bring-up, timing closure, ASIC flow). Everything up to synthesis-ready RTL is covered; nothing here has been placed and routed.
+> **Tier 4** ([tier4/](tier4/README.md)): the core is placed and routed for a Lattice ECP5 with a bitstream and a timing-closure exercise (56 -> 77 MHz Fmax), and gate-level synthesis is formally proven equivalent to the RTL. **Not done: running on a real board** (none available) and the physical ASIC flow (floorplan/CTS/routing/signoff needs a PDK + OpenROAD).
 
 ## What is here, and how each block was verified
 
