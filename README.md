@@ -58,6 +58,7 @@ rtl/tier0 rtl/alu rtl/fifo rtl/cdc rtl/axi_lite rtl/riscv   synthesizable System
 tb/                CXXRTL C++ testbenches
 formal/            SymbiYosys jobs (.sby) and formal harnesses
 programs/          RISC-V assembly test programs
+tier4/             FPGA (ECP5) build + timing closure, ASIC-style synthesis + equivalence proofs
 tools/             rtl.py driver, RISC-V assembler + ISS + random generator + cosim, netsim.py
 uvm/               UVM environment for the FIFO (unrun)
 ```
